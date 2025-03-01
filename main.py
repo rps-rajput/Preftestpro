@@ -7,8 +7,28 @@ import plotly.graph_objects as go
 import plotly.express as px
 import base64
 from datetime import datetime
+import re
+from urllib.parse import urlparse
 
 st.set_page_config(page_title="API Performance Tester", layout="wide")
+
+def get_endpoint_name(url):
+    """Extract endpoint name from full URL"""
+    parsed = urlparse(url)
+    path = parsed.path
+    # Get the last part of the path
+    endpoint = path.split('/')[-1]
+    # If empty, use the last non-empty part
+    if not endpoint and len(path.split('/')) > 1:
+        endpoint = path.split('/')[-2]
+    return endpoint or url
+
+def clear_form():
+    """Clear form inputs"""
+    st.session_state.method = "GET"
+    st.session_state.url = ""
+    st.session_state.headers = "{}"
+    st.session_state.body = "{}"
 
 def main():
     st.title("API Performance Testing Tool")
@@ -16,6 +36,16 @@ def main():
     # Initialize session state for storing APIs
     if 'apis' not in st.session_state:
         st.session_state.apis = []
+
+    # Initialize form state if not present
+    if 'method' not in st.session_state:
+        st.session_state.method = "GET"
+    if 'url' not in st.session_state:
+        st.session_state.url = ""
+    if 'headers' not in st.session_state:
+        st.session_state.headers = "{}"
+    if 'body' not in st.session_state:
+        st.session_state.body = "{}"
 
     with st.sidebar:
         st.header("Test Configuration")
@@ -46,11 +76,11 @@ def main():
         with st.form("api_form"):
             col1, col2 = st.columns(2)
             with col1:
-                method = st.selectbox("HTTP Method", ["GET", "POST", "PUT", "DELETE"])
-                url = st.text_input("API URL")
+                method = st.selectbox("HTTP Method", ["GET", "POST", "PUT", "DELETE"], key="method")
+                url = st.text_input("API URL", key="url")
 
-            headers = st.text_area("Headers (JSON format)", "{}")
-            body = st.text_area("Request Body (JSON format)", "{}")
+            headers = st.text_area("Headers (JSON format)", key="headers")
+            body = st.text_area("Request Body (JSON format)", key="body")
 
             submitted = st.form_submit_button("Add API")
             if submitted:
@@ -67,6 +97,7 @@ def main():
                     }
                     st.session_state.apis.append(api)
                     st.success("API added successfully!")
+                    clear_form()  # Clear form after successful addition
                 except json.JSONDecodeError:
                     st.error("Invalid JSON format in headers or body")
 
@@ -95,27 +126,29 @@ def main():
     if st.session_state.apis:
         st.subheader("Configured APIs")
         for idx, api in enumerate(st.session_state.apis):
-            col1, col2 = st.columns([0.95, 0.05])
-            with col1:
-                with st.expander(f"{api['method']} - {api['url']}", expanded=False):
+            expander = st.expander(f"{api['method']} - {api['url']}", expanded=False)
+            with expander:
+                col1, col2 = st.columns([0.95, 0.05])
+                with col1:
                     st.json(api)
-            with col2:
-                if st.button("🗑️", key=f"delete_{idx}", help="Delete API"):
-                    st.session_state.apis.pop(idx)
-                    st.rerun()
+                with col2:
+                    if st.button("🗑️", key=f"delete_{idx}", help="Delete API"):
+                        st.session_state.apis.pop(idx)
+                        st.rerun()
 
     if st.button("Start Test", type="primary", disabled=len(st.session_state.apis) == 0):
         with st.spinner("Running performance test..."):
             tester = APITester(st.session_state.apis, virtual_users, ramp_up_time)
             results = tester.run_test()
 
+            # Convert status_code to integer if it's string
+            df = pd.DataFrame(results)
+            df['status_code'] = pd.to_numeric(df['status_code'], errors='coerce')
+
             # Calculate overall metrics
             total_requests = len(results)
             avg_response_time = sum(r["response_time"] for r in results) / total_requests
             error_rate = sum(1 for r in results if r["status_code"] >= 400) / total_requests * 100
-
-            # Create DataFrame for analysis
-            df = pd.DataFrame(results)
 
             # Calculate percentiles
             p90 = df["response_time"].quantile(0.9)
@@ -139,6 +172,9 @@ def main():
             with col6:
                 st.metric("Error Rate", f"{error_rate:.2f}%")
 
+            # Add endpoint names for better display
+            df['endpoint'] = df['url'].apply(get_endpoint_name)
+
             # Response time distribution
             st.subheader("Response Time Distribution")
             fig_dist = px.histogram(
@@ -153,7 +189,7 @@ def main():
 
             # Error rates analysis
             st.subheader("Error Rates Analysis")
-            error_rates = df[df["status_code"] >= 400].groupby("url").size() / df.groupby("url").size()
+            error_rates = df[df["status_code"] >= 400].groupby("endpoint").size() / df.groupby("endpoint").size()
             fig_errors = px.bar(
                 x=error_rates.index,
                 y=error_rates.values,
@@ -164,7 +200,7 @@ def main():
 
             # Slowest APIs analysis
             st.subheader("Slowest APIs Analysis")
-            avg_times = df.groupby("url")["response_time"].mean().sort_values(ascending=False).head()
+            avg_times = df.groupby("endpoint")["response_time"].mean().sort_values(ascending=False).head()
             fig_slow = px.bar(
                 x=avg_times.index,
                 y=avg_times.values,
@@ -205,8 +241,8 @@ def main():
             st.subheader("Top 5 Slowest APIs")
             slowest_apis = df.groupby("url").agg({
                 "response_time": ["mean", "min", "max", "count"],
-                "status_code": lambda x: (x >= 400).mean() * 100,
-                "error_message": lambda x: x.iloc[0] if (x >= 400).any() else ""
+                "status_code": lambda x: sum(x >= 400),  # Count errors instead of mean
+                "error_message": lambda x: next((msg for msg in x if msg), "")  # Get first non-empty error message
             }).sort_values(("response_time", "mean"), ascending=False).head()
             st.dataframe(slowest_apis)
 
