@@ -146,14 +146,21 @@ def main():
     if st.session_state.apis:
         st.subheader("Configured APIs")
         for idx, api in enumerate(st.session_state.apis):
-            expander = st.expander(f"{api['method']} - {api['url']}",
-                                   expanded=False)
-            with expander:
-                col1, col2 = st.columns([0.95, 0.05])
+            # Create a container for each API with horizontal layout
+            api_container = st.container()
+            with api_container:
+                col1, col2 = st.columns([0.97, 0.03])
+                # Put expander in first column
                 with col1:
-                    st.json(api)
+                    expander = st.expander(f"{api['method']} - {api['url']}",
+                                        expanded=False)
+                    with expander:
+                        st.json(api)
+                # Put delete button in second column, aligned with expander header
                 with col2:
-                    if st.button("🗑️", key=f"delete_{idx}", help="Delete API"):
+                    st.write("")  # Add some spacing to align with expander
+                    if st.button("🗑️", key=f"delete_{idx}", help="Delete API", 
+                                use_container_width=True):
                         st.session_state.apis.pop(idx)
                         st.rerun()
 
