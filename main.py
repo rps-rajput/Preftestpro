@@ -106,6 +106,7 @@ def main():
                     }
                     st.session_state.apis.append(api)
                     st.success("API added successfully!")
+                    
                     # Reset form defaults
                     st.session_state.form_defaults = {
                         "method": "GET",
@@ -113,6 +114,15 @@ def main():
                         "headers": "{}",
                         "body": "{}"
                     }
+                    
+                    # Clear form inputs
+                    if "form_url" in st.session_state:
+                        del st.session_state.form_url
+                    if "form_headers" in st.session_state:
+                        del st.session_state.form_headers
+                    if "form_body" in st.session_state:
+                        del st.session_state.form_body
+                        
                     st.rerun()
                 except json.JSONDecodeError:
                     st.error("Invalid JSON format in headers or body")
