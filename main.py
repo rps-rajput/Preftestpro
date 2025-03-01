@@ -70,14 +70,12 @@ def main():
     if test_mode == "Manual Entry":
         st.subheader("Add API")
         with st.form("api_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                method = st.selectbox(
-                    "HTTP Method",
-                    ["GET", "POST", "PUT", "DELETE"],
-                    key="form_method"
-                )
-                url = st.text_input("API URL", key="form_url")
+            method = st.selectbox(
+                "HTTP Method",
+                ["GET", "POST", "PUT", "DELETE"],
+                key="form_method"
+            )
+            url = st.text_input("API URL", key="form_url")
 
             headers = st.text_area(
                 "Headers (JSON format)",
