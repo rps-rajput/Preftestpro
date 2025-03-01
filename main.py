@@ -12,6 +12,29 @@ from urllib.parse import urlparse
 
 st.set_page_config(page_title="API Performance Tester", layout="wide")
 
+# Custom CSS for the clear button positioning
+st.markdown("""
+<style>
+    .clear-button {
+        position: fixed;
+        right: 80px;
+        top: 0.5rem;
+        z-index: 999;
+    }
+    
+    /* Hide default streamlit button styling */
+    .clear-button button {
+        color: #ff4b4b !important;
+        border: 1px solid #ff4b4b !important;
+    }
+    
+    .clear-button button:hover {
+        color: white !important;
+        background-color: #ff4b4b !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 
 def get_endpoint_name(url):
     """Extract endpoint name from full URL"""
@@ -36,6 +59,23 @@ def clear_form():
         }
 
 
+def reset_all_data():
+    """Clear all test results and API configurations"""
+    if 'test_results' in st.session_state:
+        del st.session_state.test_results
+    if 'test_config' in st.session_state:
+        del st.session_state.test_config
+    
+    # Reset APIs list
+    st.session_state.apis = []
+    
+    # Reset form
+    st.session_state.form_key = 0
+    clear_form()
+    
+    # Force a rerun to update the UI
+    st.rerun()
+
 def main():
     st.title("API Performance Testing Tool")
 
@@ -49,6 +89,22 @@ def main():
 
     # Initialize form defaults
     clear_form()
+    
+    # Add clear button in header, only show when results exist
+    if 'test_results' in st.session_state:
+        # Create a container for the button with custom CSS
+        with st.container():
+            st.markdown(
+                """
+                <div class="clear-button">
+                    <span id="clear-btn-placeholder"></span>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+            # Place the actual button in the layout
+            if st.button("🗑️ Clear All", key="clear_all_btn", help="Clear all results and start a new test"):
+                reset_all_data()
 
     with st.sidebar:
         st.header("Test Configuration")
