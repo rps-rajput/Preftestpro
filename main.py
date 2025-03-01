@@ -77,7 +77,16 @@ def reset_all_data():
     st.rerun()
 
 def main():
-    st.title("API Performance Testing Tool")
+    # Create a layout for the title and clear button side by side
+    col1, col2 = st.columns([0.9, 0.1])
+    with col1:
+        st.title("API Performance Testing Tool")
+        
+    # Only show clear button when results exist
+    if 'test_results' in st.session_state:
+        with col2:
+            if st.button("🗑️ Clear All", key="clear_all_btn", help="Clear all results and start a new test"):
+                reset_all_data()
 
     # Initialize session state for storing APIs
     if 'apis' not in st.session_state:
@@ -89,14 +98,6 @@ def main():
 
     # Initialize form defaults
     clear_form()
-    
-    # Add clear button in header, only show when results exist
-    if 'test_results' in st.session_state:
-        # Place the actual button directly in the layout
-        col1, col2 = st.columns([0.9, 0.1])
-        with col2:
-            if st.button("🗑️ Clear All", key="clear_all_btn", help="Clear all results and start a new test"):
-                reset_all_data()
 
     with st.sidebar:
         st.header("Test Configuration")
