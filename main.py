@@ -42,6 +42,10 @@ def main():
     # Initialize session state for storing APIs
     if 'apis' not in st.session_state:
         st.session_state.apis = []
+    
+    # Form key for resetting the form completely
+    if 'form_key' not in st.session_state:
+        st.session_state.form_key = 0
 
     # Initialize form defaults
     clear_form()
@@ -77,19 +81,17 @@ def main():
 
     if test_mode == "Manual Entry":
         st.subheader("Add API")
-        with st.form("api_form"):
+        # Use dynamic form key to force reset
+        with st.form(f"api_form_{st.session_state.form_key}"):
             method = st.selectbox("HTTP Method",
-                                  ["GET", "POST", "PUT", "DELETE"],
-                                  key="form_method")
-            url = st.text_input("API URL", key="form_url")
+                                  ["GET", "POST", "PUT", "DELETE"])
+            url = st.text_input("API URL")
 
             headers = st.text_area(
                 "Headers (JSON format)",
-                value=st.session_state.form_defaults["headers"],
-                key="form_headers")
+                value=st.session_state.form_defaults["headers"])
             body = st.text_area("Request Body (JSON format)",
-                                value=st.session_state.form_defaults["body"],
-                                key="form_body")
+                                value=st.session_state.form_defaults["body"])
 
             submitted = st.form_submit_button("Add API")
             if submitted:
@@ -115,14 +117,9 @@ def main():
                         "body": "{}"
                     }
                     
-                    # Clear form inputs
-                    if "form_url" in st.session_state:
-                        del st.session_state.form_url
-                    if "form_headers" in st.session_state:
-                        del st.session_state.form_headers
-                    if "form_body" in st.session_state:
-                        del st.session_state.form_body
-                        
+                    # Increment form key to force complete reset
+                    st.session_state.form_key += 1
+                    
                     st.rerun()
                 except json.JSONDecodeError:
                     st.error("Invalid JSON format in headers or body")
