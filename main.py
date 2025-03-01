@@ -227,7 +227,7 @@ def main():
             yaxis_title="Error Rate (%)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=-45
+            xaxis_tickangle=0
         )
         st.plotly_chart(fig_errors, use_container_width=True)
 
@@ -244,7 +244,7 @@ def main():
             yaxis_title="Average Response Time (ms)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=-45
+            xaxis_tickangle=0
         )
         st.plotly_chart(fig_slow, use_container_width=True)
 

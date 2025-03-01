@@ -59,7 +59,7 @@ class ReportGenerator:
             yaxis_title="Error Rate (%)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=-45
+            xaxis_tickangle=0
         )
         return fig.to_html(full_html=False)
 
@@ -87,7 +87,7 @@ class ReportGenerator:
             yaxis_title="Average Response Time (ms)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=-45
+            xaxis_tickangle=0
         )
         return fig.to_html(full_html=False)
 
