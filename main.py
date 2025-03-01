@@ -146,23 +146,37 @@ def main():
     if st.session_state.apis:
         st.subheader("Configured APIs")
         for idx, api in enumerate(st.session_state.apis):
-            # Create a container for each API with horizontal layout
+            # Create a container for each API
             api_container = st.container()
             with api_container:
-                col1, col2 = st.columns([0.97, 0.03])
-                # Put expander in first column
-                with col1:
-                    expander = st.expander(f"{api['method']} - {api['url']}",
-                                        expanded=False)
-                    with expander:
-                        st.json(api)
-                # Put delete button in second column, aligned with expander header
-                with col2:
-                    st.write("")  # Add some spacing to align with expander
-                    if st.button("🗑️", key=f"delete_{idx}", help="Delete API", 
-                                use_container_width=True):
-                        st.session_state.apis.pop(idx)
-                        st.rerun()
+                expander = st.expander(f"{api['method']} - {api['url']}",
+                                    expanded=False)
+                
+                # Add custom CSS to position the delete button inside the expander
+                st.markdown(f"""
+                <style>
+                /* Style for delete button */
+                .delete-btn-{idx} {{
+                    font-size: 12px;
+                    color: #E74C3C;
+                    cursor: pointer;
+                    margin-left: 10px;
+                    vertical-align: middle;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+                
+                # Display API details inside the expander
+                with expander:
+                    # Add the delete button at the top inside expander
+                    col1, col2 = st.columns([0.97, 0.03])
+                    with col2:
+                        if st.button("🗑️", key=f"delete_{idx}", help="Delete API", 
+                                    use_container_width=True):
+                            st.session_state.apis.pop(idx)
+                            st.rerun()
+                    # Show API JSON
+                    st.json(api)
 
     if st.button("Start Performance Test",
                  type="primary",
