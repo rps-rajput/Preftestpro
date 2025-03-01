@@ -15,42 +15,6 @@ class ReportGenerator:
         # Add endpoint names for better display
         self.df['endpoint'] = self.df['url'].apply(lambda x: x.split('/')[-1])
 
-    def generate_html_report(self):
-        # Calculate metrics
-        metrics = self._calculate_api_metrics()
-        error_analysis = self._analyze_errors()
-        slowest_apis = self._analyze_slowest_apis()
-
-        # Calculate overall metrics
-        total_requests = len(self.results)
-        avg_response_time = self.df["response_time"].mean()
-        error_rate = (self.df["status_code"] >= 400).mean() * 100
-        total_apis = len(self.df["url"].unique())
-
-        # Generate plots
-        response_time_plot = self._create_response_time_plot()
-        error_rate_plot = self._create_error_rate_plot()
-        slowest_apis_plot = self._create_slowest_apis_plot()
-
-        # Load template from file and render
-        with open("templates/report_template.html", "r") as f:
-            template = Template(f.read())
-
-        return template.render(
-            virtual_users=self.virtual_users or len(set(self.df.index)),
-            ramp_up_time=self.ramp_up_time or 5,
-            total_apis=total_apis,
-            avg_response_time=avg_response_time,
-            total_requests=total_requests,
-            error_rate=error_rate,
-            response_time_plot=response_time_plot,
-            error_rate_plot=error_rate_plot,
-            slowest_apis_plot=slowest_apis_plot,
-            api_metrics=metrics,
-            error_analysis=error_analysis,
-            slowest_apis=slowest_apis
-        )
-
     def _create_response_time_plot(self):
         """Creates a histogram of response times"""
         fig = px.histogram(
@@ -83,7 +47,7 @@ class ReportGenerator:
             orientation="h",
             title="Error Rates by API",
             labels={"x": "Error Rate (%)", "y": "API Endpoint"},
-            text=error_rates.values * 100,  # Show percentage on bars
+            text=error_rates.values * 100  # Show percentage on bars
         )
         fig.update_traces(
             marker_color="#FF6B6B",
@@ -95,7 +59,8 @@ class ReportGenerator:
             xaxis_tickformat=',.1f',
             xaxis_title="Error Rate (%)",
             yaxis_title="API Endpoint",
-            showlegend=False
+            showlegend=False,
+            yaxis_tickangle=0
         )
         return fig.to_html(full_html=False)
 
@@ -123,7 +88,8 @@ class ReportGenerator:
         fig.update_layout(
             xaxis_title="Average Response Time (ms)",
             yaxis_title="API Endpoint",
-            showlegend=False
+            showlegend=False,
+            yaxis_tickangle=0
         )
         return fig.to_html(full_html=False)
 
@@ -185,3 +151,39 @@ class ReportGenerator:
         result.columns = ['mean_response_time', 'min_response_time', 'max_response_time', 
                          'error_count', 'error_message']
         return result.reset_index()
+
+    def generate_html_report(self):
+        # Calculate metrics
+        metrics = self._calculate_api_metrics()
+        error_analysis = self._analyze_errors()
+        slowest_apis = self._analyze_slowest_apis()
+
+        # Calculate overall metrics
+        total_requests = len(self.results)
+        avg_response_time = self.df["response_time"].mean()
+        error_rate = (self.df["status_code"] >= 400).mean() * 100
+        total_apis = len(self.df["url"].unique())
+
+        # Generate plots
+        response_time_plot = self._create_response_time_plot()
+        error_rate_plot = self._create_error_rate_plot()
+        slowest_apis_plot = self._create_slowest_apis_plot()
+
+        # Load template from file and render
+        with open("templates/report_template.html", "r") as f:
+            template = Template(f.read())
+
+        return template.render(
+            virtual_users=self.virtual_users or len(set(self.df.index)),
+            ramp_up_time=self.ramp_up_time or 5,
+            total_apis=total_apis,
+            avg_response_time=avg_response_time,
+            total_requests=total_requests,
+            error_rate=error_rate,
+            response_time_plot=response_time_plot,
+            error_rate_plot=error_rate_plot,
+            slowest_apis_plot=slowest_apis_plot,
+            api_metrics=metrics,
+            error_analysis=error_analysis,
+            slowest_apis=slowest_apis
+        )

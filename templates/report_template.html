@@ -9,11 +9,9 @@
             padding: 20px;
         }
         .report-title {
-            color: #2C3E50;
+            color: #333;
+            margin-top: 0px;
             text-align: center;
-            padding: 20px 0;
-            border-bottom: 2px solid #3498DB;
-            margin-bottom: 30px;
         }
         .test-config {
             background: #f8f9fa;
@@ -51,34 +49,46 @@
             font-weight: bold;
             margin: 0;
         }
+        /* Single-line table styling */
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
             font-size: 14px;
+            border: none;
         }
+
         th, td {
             padding: 8px;
             text-align: left;
             border: 1px solid #ddd;
             white-space: nowrap;
         }
+
         th {
             background-color: #f8f9fa;
             font-weight: 500;
+            border-bottom: 1px solid #ddd;
         }
+
         tr:nth-child(even) {
             background-color: #ffffff;
         }
+
         tr:nth-child(odd) {
             background-color: #f9f9f9;
         }
+
         tr:hover {
             background-color: #f5f5f5;
         }
-        .error-message {
-            color: #E74C3C;
+
+        /* Override any double borders */
+        table, th, td {
+            border-width: 1px !important;
         }
+
+        /* Report sections */
         .section {
             background: white;
             padding: 20px;
@@ -86,62 +96,66 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
+
+        /* Error message styling */
+        .error-message {
+            color: #E74C3C;
+        }
     </style>
 </head>
 <body>
-    <div id="report-content">
-        <h1 class="report-title">Performance Test Report</h1>
+    <h1 class="report-title">Performance Test Report</h1>
 
-        <div class="test-config">
-            <p><strong>Test Configuration:</strong> Performance test executed with {{ virtual_users }} virtual users 
-            and {{ ramp_up_time }} seconds ramp-up time</p>
-        </div>
-
-        <div class="metric-container">
-            <div class="metric-box">
-                <h3>Virtual Users</h3>
-                <p>{{ virtual_users }}</p>
-            </div>
-            <div class="metric-box">
-                <h3>Ramp-up Time</h3>
-                <p>{{ ramp_up_time }}s</p>
-            </div>
-            <div class="metric-box">
-                <h3>Total APIs Tested</h3>
-                <p>{{ total_apis }}</p>
-            </div>
-            <div class="metric-box">
-                <h3>Avg Response Time</h3>
-                <p>{{ "%.2f"|format(avg_response_time) }}ms</p>
-            </div>
-            <div class="metric-box">
-                <h3>Total Requests</h3>
-                <p>{{ total_requests }}</p>
-            </div>
-            <div class="metric-box">
-                <h3>Error Rate</h3>
-                <p>{{ "%.2f"|format(error_rate) }}%</p>
-            </div>
-        </div>
-
-        <h2>Response Time Distribution</h2>
-        {{ response_time_plot | safe }}
-
-        <h2>Error Rates Analysis</h2>
-        {{ error_rate_plot | safe }}
-
-        <h2>Slowest APIs Analysis</h2>
-        {{ slowest_apis_plot | safe }}
-
-        <h2>Comprehensive API Metrics</h2>
-        {{ api_metrics.to_html(classes="dataframe") | safe }}
-
-        <h2>Detailed Analysis</h2>
-        <h3>Top 5 APIs with Highest Error Rates</h3>
-        {{ error_analysis.to_html(classes="dataframe") | safe }}
-
-        <h3>Top 5 Slowest APIs</h3>
-        {{ slowest_apis.to_html(classes="dataframe") | safe }}
+    <div class="test-config">
+        <p><strong>Test Configuration:</strong> Performance test executed with {{ virtual_users }} virtual users 
+        and {{ ramp_up_time }} seconds ramp-up time</p>
     </div>
+
+    <div class="metric-container">
+        <div class="metric-box">
+            <h3>Virtual Users</h3>
+            <p>{{ virtual_users }}</p>
+        </div>
+        <div class="metric-box">
+            <h3>Ramp-up Time</h3>
+            <p>{{ ramp_up_time }}s</p>
+        </div>
+        <div class="metric-box">
+            <h3>Total APIs Tested</h3>
+            <p>{{ total_apis }}</p>
+        </div>
+        <div class="metric-box">
+            <h3>Avg Response Time</h3>
+            <p>{{ "%.2f"|format(avg_response_time) }}ms</p>
+        </div>
+        <div class="metric-box">
+            <h3>Total Requests</h3>
+            <p>{{ total_requests }}</p>
+        </div>
+        <div class="metric-box">
+            <h3>Error Rate</h3>
+            <p>{{ "%.2f"|format(error_rate) }}%</p>
+        </div>
+    </div>
+
+    <h2>Response Time Distribution</h2>
+    {{ response_time_plot | safe }}
+
+    <h2>Error Rates Analysis</h2>
+    {{ error_rate_plot | safe }}
+
+    <h2>Slowest APIs Analysis</h2>
+    {{ slowest_apis_plot | safe }}
+
+    <h2>Comprehensive API Metrics</h2>
+    {{ api_metrics.to_html(classes="dataframe") | safe }}
+
+    <h2>Detailed Analysis</h2>
+    <h3>Top 5 APIs with Highest Error Rates</h3>
+    {{ error_analysis.to_html(classes="dataframe") | safe }}
+
+    <h3>Top 5 Slowest APIs</h3>
+    {{ slowest_apis.to_html(classes="dataframe") | safe }}
 </body>
 </html>
