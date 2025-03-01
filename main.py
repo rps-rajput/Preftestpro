@@ -295,21 +295,29 @@ def main():
             }).sort_values(("response_time", "mean"), ascending=False).head()
             st.dataframe(slowest_apis)
 
-            # Generate Report button at the end
+            # Generate Report section at the end
             st.markdown("---")  # Add a separator
-            st.subheader("Generate Report")
+            st.header("Generate Report")
 
-            # Download report button
-            report_gen = ReportGenerator(results)
-            report_html = report_gen.generate_html_report()
-            st.download_button(
-                label="Generate HTML Report",
-                data=report_html,
-                file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                mime="text/html",
-                help="Download detailed performance report",
-                use_container_width=True,  # Make button full width
-            )
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown("Interactive web-based report with detailed metrics and charts")
+            with col2:
+                # Download report button
+                report_gen = ReportGenerator(
+                    results,
+                    virtual_users=virtual_users,
+                    ramp_up_time=ramp_up_time
+                )
+                report_html = report_gen.generate_html_report()
+                st.download_button(
+                    label="Generate Report",
+                    data=report_html,
+                    file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html",
+                    help="Download detailed performance report",
+                    use_container_width=True,  # Make button full width
+                )
 
 if __name__ == "__main__":
     main()

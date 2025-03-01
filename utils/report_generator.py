@@ -5,11 +5,15 @@ from jinja2 import Template
 import numpy as np
 
 class ReportGenerator:
-    def __init__(self, results):
+    def __init__(self, results, virtual_users=None, ramp_up_time=None):
         self.results = results
+        self.virtual_users = virtual_users
+        self.ramp_up_time = ramp_up_time
         self.df = pd.DataFrame(results)
         # Convert status_code to numeric type
         self.df['status_code'] = pd.to_numeric(self.df['status_code'], errors='coerce')
+        # Add endpoint names for better display
+        self.df['endpoint'] = self.df['url'].apply(lambda x: x.split('/')[-1])
 
     def generate_html_report(self):
         # Calculate metrics
@@ -33,8 +37,8 @@ class ReportGenerator:
             template = Template(f.read())
 
         return template.render(
-            virtual_users=len(set(self.df.index)),
-            ramp_up_time=5,  # This should be passed to the class
+            virtual_users=self.virtual_users or len(set(self.df.index)),
+            ramp_up_time=self.ramp_up_time or 5,
             total_apis=total_apis,
             avg_response_time=avg_response_time,
             total_requests=total_requests,
@@ -67,37 +71,60 @@ class ReportGenerator:
     def _create_error_rate_plot(self):
         """Creates a bar chart of error rates by API"""
         error_rates = (self.df[self.df["status_code"] >= 400]
-                      .groupby("url")
+                      .groupby("endpoint")
                       .size()
-                      .divide(self.df.groupby("url").size())
+                      .divide(self.df.groupby("endpoint").size())
                       .sort_values(ascending=True)
                       .tail(5))  # Show top 5 APIs with highest error rates
 
         fig = px.bar(
-            x=error_rates.values * 100,  # Convert to percentage
             y=error_rates.index,
+            x=error_rates.values * 100,  # Convert to percentage
             orientation="h",
             title="Error Rates by API",
-            labels={"x": "Error Rate (%)", "y": "API Endpoint"}
+            labels={"x": "Error Rate (%)", "y": "API Endpoint"},
+            text=error_rates.values * 100,  # Show percentage on bars
         )
-        fig.update_traces(marker_color="#FF6B6B", marker_line_color="#E74C3C")
+        fig.update_traces(
+            marker_color="#FF6B6B",
+            marker_line_color="#E74C3C",
+            texttemplate='%{text:.1f}%',
+            textposition='outside'
+        )
+        fig.update_layout(
+            xaxis_tickformat=',.1f',
+            xaxis_title="Error Rate (%)",
+            yaxis_title="API Endpoint",
+            showlegend=False
+        )
         return fig.to_html(full_html=False)
 
     def _create_slowest_apis_plot(self):
         """Creates a bar chart of slowest APIs"""
-        avg_times = (self.df.groupby("url")["response_time"]
+        avg_times = (self.df.groupby("endpoint")["response_time"]
                     .mean()
                     .sort_values(ascending=True)
                     .tail(5))  # Show top 5 slowest APIs
 
         fig = px.bar(
-            x=avg_times.values,
             y=avg_times.index,
+            x=avg_times.values,
             orientation="h",
             title="Top 5 Slowest APIs",
-            labels={"x": "Average Response Time (ms)", "y": "API Endpoint"}
+            labels={"x": "Average Response Time (ms)", "y": "API Endpoint"},
+            text=avg_times.values
         )
-        fig.update_traces(marker_color="#2E86C1", marker_line_color="#2874A6")
+        fig.update_traces(
+            marker_color="#2E86C1",
+            marker_line_color="#2874A6",
+            texttemplate='%{text:.0f} ms',
+            textposition='outside'
+        )
+        fig.update_layout(
+            xaxis_title="Average Response Time (ms)",
+            yaxis_title="API Endpoint",
+            showlegend=False
+        )
         return fig.to_html(full_html=False)
 
     def _calculate_api_metrics(self):
@@ -121,7 +148,9 @@ class ReportGenerator:
         ], axis=1)
 
         # Calculate throughput
-        metrics["throughput"] = metrics[("response_time", "count")] / (len(set(self.df.index)) * 5)  # requests per second
+        metrics["throughput"] = metrics[("response_time", "count")] / (
+            (self.virtual_users or len(set(self.df.index))) * (self.ramp_up_time or 5)
+        )
 
         # Flatten column names
         metrics.columns = ["avg_response_time", "min_time", "max_time", "request_count", 
