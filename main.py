@@ -248,24 +248,15 @@ def main():
                 border: none;
                 cursor: pointer;
                 font-weight: 500;
+                display: block;
+                margin: 20px auto;
+                text-align: center;
             }
             .stDownloadButton:hover {
                 background-color: #2980B9;
             }
             </style>
             """, unsafe_allow_html=True)
-
-            # Download report
-            report_gen = ReportGenerator(results)
-            report_html = report_gen.generate_html_report()
-            b64 = base64.b64encode(report_html.encode()).decode()
-            st.download_button(
-                label="Download HTML Report",
-                data=report_html,
-                file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                mime="text/html",
-                help="Download detailed performance report"
-            )
 
             # Comprehensive API metrics
             st.subheader("Comprehensive API Metrics")
@@ -304,6 +295,21 @@ def main():
             }).sort_values(("response_time", "mean"), ascending=False).head()
             st.dataframe(slowest_apis)
 
+            # Generate Report button at the end
+            st.markdown("---")  # Add a separator
+            st.subheader("Generate Report")
+
+            # Download report button
+            report_gen = ReportGenerator(results)
+            report_html = report_gen.generate_html_report()
+            st.download_button(
+                label="Generate HTML Report",
+                data=report_html,
+                file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                mime="text/html",
+                help="Download detailed performance report",
+                use_container_width=True,  # Make button full width
+            )
 
 if __name__ == "__main__":
     main()
