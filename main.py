@@ -70,21 +70,11 @@ def main():
                 except json.JSONDecodeError:
                     st.error("Invalid JSON format in headers or body")
 
-        # Display configured APIs
-        if st.session_state.apis:
-            st.subheader("Configured APIs")
-            for idx, api in enumerate(st.session_state.apis):
-                with st.expander(f"{api['method']} - {api['url']}", expanded=False):
-                    st.json(api)
-                    if st.button(f"Delete API {idx + 1}"):
-                        st.session_state.apis.pop(idx)
-                        st.rerun()
-
     else:  # Postman Collection
         uploaded_file = st.file_uploader("Upload Postman Collection", type=["json"])
         if uploaded_file:
             collection = json.load(uploaded_file)
-            st.session_state.apis = []
+            imported_apis = []
             for item in collection.get("item", []):
                 request = item.get("request", {})
                 headers_dict = {h["key"]: h["value"] for h in request.get("header", [])}
@@ -95,58 +85,133 @@ def main():
                     "headers": headers_dict,
                     "body": request.get("body", {}).get("raw", "{}")
                 }
-                st.session_state.apis.append(api)
+                imported_apis.append(api)
 
-            # Display imported APIs
-            st.subheader("Imported APIs")
-            for idx, api in enumerate(st.session_state.apis):
+            if st.button("Import APIs"):
+                st.session_state.apis.extend(imported_apis)
+                st.success(f"Successfully imported {len(imported_apis)} APIs")
+
+    # Display configured APIs (common for both modes)
+    if st.session_state.apis:
+        st.subheader("Configured APIs")
+        for idx, api in enumerate(st.session_state.apis):
+            col1, col2 = st.columns([0.95, 0.05])
+            with col1:
                 with st.expander(f"{api['method']} - {api['url']}", expanded=False):
                     st.json(api)
-                    if st.button(f"Delete API {idx + 1}"):
-                        st.session_state.apis.pop(idx)
-                        st.rerun()
+            with col2:
+                if st.button("🗑️", key=f"delete_{idx}", help="Delete API"):
+                    st.session_state.apis.pop(idx)
+                    st.rerun()
 
     if st.button("Start Test", type="primary", disabled=len(st.session_state.apis) == 0):
         with st.spinner("Running performance test..."):
             tester = APITester(st.session_state.apis, virtual_users, ramp_up_time)
             results = tester.run_test()
 
-            report_gen = ReportGenerator(results)
-            html_report = report_gen.generate_html_report()
+            # Calculate overall metrics
+            total_requests = len(results)
+            avg_response_time = sum(r["response_time"] for r in results) / total_requests
+            error_rate = sum(1 for r in results if r["status_code"] >= 400) / total_requests * 100
 
-            # Display results
+            # Create DataFrame for analysis
+            df = pd.DataFrame(results)
+
+            # Calculate percentiles
+            p90 = df["response_time"].quantile(0.9)
+            p95 = df["response_time"].quantile(0.95)
+            p99 = df["response_time"].quantile(0.99)
+
             st.header("Test Results")
 
-            # Summary metrics
-            col1, col2, col3, col4 = st.columns(4)
+            # Summary metrics in boxes
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
             with col1:
-                st.metric("Total Requests", len(results))
-            with col2:
-                avg_time = sum(r["response_time"] for r in results) / len(results)
-                st.metric("Avg Response Time", f"{avg_time:.2f}ms")
-            with col3:
-                error_rate = sum(1 for r in results if r["status_code"] >= 400) / len(results) * 100
-                st.metric("Error Rate", f"{error_rate:.2f}%")
-            with col4:
                 st.metric("Virtual Users", virtual_users)
+            with col2:
+                st.metric("Ramp-up Time", f"{ramp_up_time}s")
+            with col3:
+                st.metric("Total APIs Tested", len(st.session_state.apis))
+            with col4:
+                st.metric("Avg Response Time", f"{avg_response_time:.2f}ms")
+            with col5:
+                st.metric("Total Requests", total_requests)
+            with col6:
+                st.metric("Error Rate", f"{error_rate:.2f}%")
 
             # Response time distribution
             st.subheader("Response Time Distribution")
-            fig = px.histogram(
-                [r["response_time"] for r in results],
+            fig_dist = px.histogram(
+                df,
+                x="response_time",
                 nbins=50,
-                labels={"value": "Response Time (ms)"},
-                opacity=0.8
+                labels={"response_time": "Response Time (ms)", "count": "Frequency"},
+                title="Response Time Distribution"
             )
-            st.plotly_chart(fig, use_container_width=True)
+            fig_dist.update_layout(showlegend=False)
+            st.plotly_chart(fig_dist, use_container_width=True)
 
-            # Error analysis
-            st.subheader("Error Analysis")
-            errors_df = pd.DataFrame([r for r in results if r["status_code"] >= 400])
-            if not errors_df.empty:
-                st.dataframe(errors_df[["url", "status_code", "error_message"]])
+            # Error rates analysis
+            st.subheader("Error Rates Analysis")
+            error_rates = df[df["status_code"] >= 400].groupby("url").size() / df.groupby("url").size()
+            fig_errors = px.bar(
+                x=error_rates.index,
+                y=error_rates.values,
+                labels={"x": "API Endpoint", "y": "Error Rate"},
+                title="Error Rates by API"
+            )
+            st.plotly_chart(fig_errors, use_container_width=True)
+
+            # Slowest APIs analysis
+            st.subheader("Slowest APIs Analysis")
+            avg_times = df.groupby("url")["response_time"].mean().sort_values(ascending=False).head()
+            fig_slow = px.bar(
+                x=avg_times.index,
+                y=avg_times.values,
+                labels={"x": "API Endpoint", "y": "Average Response Time (ms)"},
+                title="Top 5 Slowest APIs"
+            )
+            st.plotly_chart(fig_slow, use_container_width=True)
+
+            # Comprehensive API metrics
+            st.subheader("Comprehensive API Metrics")
+            api_metrics = df.groupby("url").agg({
+                "response_time": ["mean", "min", "max", "count"],
+                "status_code": lambda x: (x >= 400).mean() * 100
+            }).round(2)
+            api_metrics.columns = ["avg_response_time", "min_time", "max_time", "request_count", "error_rate"]
+
+            # Add percentiles
+            api_metrics["p90"] = df.groupby("url")["response_time"].quantile(0.9)
+            api_metrics["p95"] = df.groupby("url")["response_time"].quantile(0.95)
+            api_metrics["p99"] = df.groupby("url")["response_time"].quantile(0.99)
+
+            # Add throughput (requests per second)
+            api_metrics["throughput"] = api_metrics["request_count"] / (virtual_users * ramp_up_time)
+
+            st.dataframe(api_metrics)
+
+            # Top 5 APIs with highest error rates
+            st.subheader("Top 5 APIs with Highest Error Rates")
+            error_analysis = df[df["status_code"] >= 400].groupby("url").agg({
+                "status_code": "count",
+                "response_time": "mean",
+                "error_message": lambda x: x.iloc[0]  # Take first error message
+            }).sort_values("status_code", ascending=False).head()
+            error_analysis.columns = ["total_requests", "avg_response_time", "error_message"]
+            st.dataframe(error_analysis)
+
+            # Top 5 slowest APIs with details
+            st.subheader("Top 5 Slowest APIs")
+            slowest_apis = df.groupby("url").agg({
+                "response_time": ["mean", "min", "max", "count"],
+                "status_code": lambda x: (x >= 400).mean() * 100,
+                "error_message": lambda x: x.iloc[0] if (x >= 400).any() else ""
+            }).sort_values(("response_time", "mean"), ascending=False).head()
+            st.dataframe(slowest_apis)
 
             # Download report
+            report_gen = ReportGenerator(results)
             report_html = report_gen.generate_html_report()
             b64 = base64.b64encode(report_html.encode()).decode()
             href = f'<a href="data:text/html;base64,{b64}" download="performance_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html">Download HTML Report</a>'
