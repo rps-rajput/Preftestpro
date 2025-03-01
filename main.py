@@ -77,16 +77,8 @@ def reset_all_data():
     st.rerun()
 
 def main():
-    # Create a layout for the title and clear button side by side
-    col1, col2 = st.columns([0.9, 0.1])
-    with col1:
-        st.title("API Performance Testing Tool")
-        
-    # Only show clear button when results exist
-    if 'test_results' in st.session_state:
-        with col2:
-            if st.button("🗑️ Clear All", key="clear_all_btn", help="Clear all results and start a new test"):
-                reset_all_data()
+    # Simple title without a clear button next to it
+    st.title("API Performance Testing Tool")
 
     # Initialize session state for storing APIs
     if 'apis' not in st.session_state:
@@ -412,20 +404,34 @@ def main():
         st.markdown(
             "Interactive web-based report with detailed metrics and charts")
 
-        # Download report button with primary button styling (same as Start Test)
-        report_gen = ReportGenerator(results,
-                                     virtual_users=virtual_users,
-                                     ramp_up_time=ramp_up_time)
-        report_html = report_gen.generate_html_report()
-        st.download_button(
-            label="Generate Report",
-            data=report_html,
-            file_name=
-            f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-            mime="text/html",
-            help="Download detailed performance report",
-            type="primary"  # Use primary button type like Start Test button
-        )
+        # Create a row for buttons at the bottom
+        report_col1, report_col2 = st.columns(2)
+        
+        # Download report button in first column
+        with report_col1:
+            report_gen = ReportGenerator(results,
+                                         virtual_users=virtual_users,
+                                         ramp_up_time=ramp_up_time)
+            report_html = report_gen.generate_html_report()
+            st.download_button(
+                label="Generate Report",
+                data=report_html,
+                file_name=
+                f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                mime="text/html",
+                help="Download detailed performance report",
+                type="primary",  # Use primary button type like Start Test button
+                use_container_width=True  # Make button full width of column
+            )
+            
+        # Clear All button in second column
+        with report_col2:
+            if st.button("🗑️ Clear All", 
+                         key="clear_all_btn", 
+                         help="Clear all results and start a new test",
+                         type="secondary",  # Use secondary button type for contrast
+                         use_container_width=True):  # Make button full width of column
+                reset_all_data()
 
 
 if __name__ == "__main__":
