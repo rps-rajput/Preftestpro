@@ -92,17 +92,9 @@ def main():
     
     # Add clear button in header, only show when results exist
     if 'test_results' in st.session_state:
-        # Create a container for the button with custom CSS
-        with st.container():
-            st.markdown(
-                """
-                <div class="clear-button">
-                    <span id="clear-btn-placeholder"></span>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
-            # Place the actual button in the layout
+        # Place the actual button directly in the layout
+        col1, col2 = st.columns([0.9, 0.1])
+        with col2:
             if st.button("🗑️ Clear All", key="clear_all_btn", help="Clear all results and start a new test"):
                 reset_all_data()
 
@@ -151,34 +143,42 @@ def main():
 
             submitted = st.form_submit_button("Add API")
             if submitted:
-                try:
-                    headers_dict = json.loads(headers)
-                    headers_dict.update(auth_details)
-                    body_dict = json.loads(body)
+                # Validate URL field is not empty
+                if not url.strip():
+                    st.error("Please enter an API URL")
+                else:
+                    try:
+                        headers_dict = json.loads(headers)
+                        headers_dict.update(auth_details)
+                        body_dict = json.loads(body)
 
-                    api = {
-                        "method": method,
-                        "url": url,
-                        "headers": headers_dict,
-                        "body": body_dict
-                    }
-                    st.session_state.apis.append(api)
-                    st.success("API added successfully!")
-                    
-                    # Reset form defaults
-                    st.session_state.form_defaults = {
-                        "method": "GET",
-                        "url": "",
-                        "headers": "{}",
-                        "body": "{}"
-                    }
-                    
-                    # Increment form key to force complete reset
-                    st.session_state.form_key += 1
-                    
-                    st.rerun()
-                except json.JSONDecodeError:
-                    st.error("Invalid JSON format in headers or body")
+                        api = {
+                            "method": method,
+                            "url": url,
+                            "headers": headers_dict,
+                            "body": body_dict
+                        }
+                        st.session_state.apis.append(api)
+                        
+                        # Reset form defaults
+                        st.session_state.form_defaults = {
+                            "method": "GET",
+                            "url": "",
+                            "headers": "{}",
+                            "body": "{}"
+                        }
+                        
+                        # Increment form key to force complete reset
+                        st.session_state.form_key += 1
+                        
+                        st.rerun()
+                    except json.JSONDecodeError:
+                        st.error("Invalid JSON format in headers or body")
+
+        # Display success message outside the form if an API was just added
+        if 'apis' in st.session_state and len(st.session_state.apis) > 0:
+            if not submitted:  # Only show after rerun to avoid double messages
+                st.success(f"API added successfully! Total APIs: {len(st.session_state.apis)}")
 
     else:  # Postman Collection
         uploaded_file = st.file_uploader("Upload Postman Collection",
