@@ -142,8 +142,10 @@
     <h2>Response Time Distribution</h2>
     {{ response_time_plot | safe }}
 
+    {% if has_errors %}
     <h2>Error Rates Analysis</h2>
     {{ error_rate_plot | safe }}
+    {% endif %}
 
     <h2>Slowest APIs Analysis</h2>
     {{ slowest_apis_plot | safe }}
@@ -152,8 +154,10 @@
     {{ api_metrics.to_html(classes="dataframe") | safe }}
 
     <h2>Detailed Analysis</h2>
+    {% if has_errors %}
     <h3>Top 5 APIs with Highest Error Rates</h3>
     {{ error_analysis.to_html(classes="dataframe") | safe }}
+    {% endif %}
 
     <h3>Top 5 Slowest APIs</h3>
     {{ slowest_apis.to_html(classes="dataframe") | safe }}

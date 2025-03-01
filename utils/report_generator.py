@@ -153,7 +153,6 @@ class ReportGenerator:
     def generate_html_report(self):
         # Calculate metrics
         metrics = self._calculate_api_metrics()
-        error_analysis = self._analyze_errors()
         slowest_apis = self._analyze_slowest_apis()
 
         # Calculate overall metrics
@@ -161,11 +160,17 @@ class ReportGenerator:
         avg_response_time = self.df["response_time"].mean()
         error_rate = (self.df["status_code"] >= 400).mean() * 100
         total_apis = len(self.df["url"].unique())
-
-        # Generate plots
+        
+        # Check if there are any errors
+        has_errors = (self.df["status_code"] >= 400).any()
+        
+        # Generate plots - error plot only if errors exist
         response_time_plot = self._create_response_time_plot()
-        error_rate_plot = self._create_error_rate_plot()
+        error_rate_plot = self._create_error_rate_plot() if has_errors else ""
         slowest_apis_plot = self._create_slowest_apis_plot()
+        
+        # Only analyze errors if they exist
+        error_analysis = self._analyze_errors() if has_errors else pd.DataFrame()
 
         # Load template from file and render
         with open("templates/report_template.html", "r") as f:
@@ -183,5 +188,6 @@ class ReportGenerator:
             slowest_apis_plot=slowest_apis_plot,
             api_metrics=metrics,
             error_analysis=error_analysis,
-            slowest_apis=slowest_apis
+            slowest_apis=slowest_apis,
+            has_errors=has_errors  # Pass flag to template
         )

@@ -300,25 +300,27 @@ def main():
         fig_dist.update_layout(showlegend=False)
         st.plotly_chart(fig_dist, use_container_width=True)
 
-        # Error rates analysis
-        st.subheader("Error Rates Analysis")
-        error_rates = df[df["status_code"] >= 400].groupby(
-            "endpoint").size() / df.groupby("endpoint").size()
-        error_rates = error_rates.sort_values(ascending=False).head()
-        fig_errors = px.bar(
-            x=error_rates.index,
-            y=error_rates.values * 100,  # Convert to percentage
-            labels={
-                "y": "Error Rate (%)",
-                "x": "API Endpoint"
-            },
-            title="Error Rates by API")
-        fig_errors.update_layout(yaxis_tickformat=',.1f',
-                                 yaxis_title="Error Rate (%)",
-                                 xaxis_title="API Endpoint",
-                                 showlegend=False,
-                                 xaxis_tickangle=0)
-        st.plotly_chart(fig_errors, use_container_width=True)
+        # Error rates analysis - only show if errors exist
+        has_errors = (df["status_code"] >= 400).any()
+        if has_errors:
+            st.subheader("Error Rates Analysis")
+            error_rates = df[df["status_code"] >= 400].groupby(
+                "endpoint").size() / df.groupby("endpoint").size()
+            error_rates = error_rates.sort_values(ascending=False).head()
+            fig_errors = px.bar(
+                x=error_rates.index,
+                y=error_rates.values * 100,  # Convert to percentage
+                labels={
+                    "y": "Error Rate (%)",
+                    "x": "API Endpoint"
+                },
+                title="Error Rates by API")
+            fig_errors.update_layout(yaxis_tickformat=',.1f',
+                                    yaxis_title="Error Rate (%)",
+                                    xaxis_title="API Endpoint",
+                                    showlegend=False,
+                                    xaxis_tickangle=0)
+            st.plotly_chart(fig_errors, use_container_width=True)
 
         # Slowest APIs analysis
         st.subheader("Slowest APIs Analysis")
@@ -370,20 +372,21 @@ def main():
 
         st.dataframe(api_metrics)
 
-        # Top 5 APIs with highest error rates
-        st.subheader("Top 5 APIs with Highest Error Rates")
-        error_analysis = df[df["status_code"] >= 400].groupby("url").agg({
-            "status_code":
-            "count",
-            "response_time":
-            "mean",
-            "error_message":
-            lambda x: x.iloc[0]  # Take first error message
-        }).sort_values("status_code", ascending=False).head()
-        error_analysis.columns = [
-            "total_requests", "avg_response_time", "error_message"
-        ]
-        st.dataframe(error_analysis)
+        # Top 5 APIs with highest error rates - only show if errors exist
+        if has_errors:
+            st.subheader("Top 5 APIs with Highest Error Rates")
+            error_analysis = df[df["status_code"] >= 400].groupby("url").agg({
+                "status_code":
+                "count",
+                "response_time":
+                "mean",
+                "error_message":
+                lambda x: x.iloc[0]  # Take first error message
+            }).sort_values("status_code", ascending=False).head()
+            error_analysis.columns = [
+                "total_requests", "avg_response_time", "error_message"
+            ]
+            st.dataframe(error_analysis)
 
         # Top 5 slowest APIs with details
         st.subheader("Top 5 Slowest APIs")
