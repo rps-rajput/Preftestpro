@@ -106,7 +106,14 @@ def main():
                     }
                     st.session_state.apis.append(api)
                     st.success("API added successfully!")
-                    # Reset form defaults
+                    
+                    # Reset form input keys directly
+                    st.session_state.form_method = "GET"
+                    st.session_state.form_url = ""
+                    st.session_state.form_headers = "{}"
+                    st.session_state.form_body = "{}"
+                    
+                    # Reset form defaults as well
                     st.session_state.form_defaults = {
                         "method": "GET",
                         "url": "",
