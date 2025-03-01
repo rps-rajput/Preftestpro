@@ -8,6 +8,8 @@ class ReportGenerator:
     def __init__(self, results):
         self.results = results
         self.df = pd.DataFrame(results)
+        # Convert status_code to numeric type
+        self.df['status_code'] = pd.to_numeric(self.df['status_code'], errors='coerce')
 
     def generate_html_report(self):
         # Calculate metrics
@@ -132,21 +134,25 @@ class ReportGenerator:
         error_analysis = error_df.groupby("url").agg({
             "status_code": "count",
             "response_time": "mean",
-            "error_message": lambda x: x.iloc[0]
+            "error_message": lambda x: x.iloc[0] if len(x) > 0 else ""
         }).sort_values("status_code", ascending=False).head()
 
-        error_analysis.columns = ["total_requests", "avg_response_time", "error_message"]
-        error_analysis["error_rate"] = (error_analysis["total_requests"] / 
+        error_analysis.columns = ["total_errors", "avg_response_time", "error_message"]
+        error_analysis["error_rate"] = (error_analysis["total_errors"] / 
                                       self.df.groupby("url").size() * 100)
 
         return error_analysis.reset_index()
 
     def _analyze_slowest_apis(self):
         """Analyzes top 5 slowest APIs with details"""
-        return (self.df.groupby("url").agg({
+        result = (self.df.groupby("url").agg({
             "response_time": ["mean", "min", "max"],
-            "status_code": lambda x: (x >= 400).mean() * 100,
-            "error_message": lambda x: x.iloc[0] if (x >= 400).any() else ""
+            "status_code": lambda x: sum(x >= 400),
+            "error_message": lambda x: x.iloc[0] if any(x.notna()) else ""
         }).sort_values(("response_time", "mean"), ascending=False)
-        .head()
-        .reset_index())
+        .head())
+
+        # Flatten multi-level columns
+        result.columns = ['mean_response_time', 'min_response_time', 'max_response_time', 
+                         'error_count', 'error_message']
+        return result.reset_index()
