@@ -146,31 +146,23 @@ def main():
     if st.session_state.apis:
         st.subheader("Configured APIs")
         for idx, api in enumerate(st.session_state.apis):
-            # Use a single container for each API
-            expander_label = f"{api['method']} - {api['url']} "
-            expander = st.expander(expander_label, expanded=False)
-            
-            # Custom CSS to position delete button inside the expander header
-            st.markdown(f"""
-            <style>
-            div[data-testid="stExpander"] > div[role="button"]:has(p:contains("{expander_label.strip()}")) {{
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Place delete button right after the expander label
-            col1, col2 = st.columns([0.95, 0.05])
-            with col2:
-                if st.button("🗑️", key=f"delete_{idx}", help="Delete API", use_container_width=True):
-                    st.session_state.apis.pop(idx)
-                    st.rerun()
-            
-            # Display API details inside the expander
-            with expander:
-                st.json(api)
+            # Create a container for each API with horizontal layout
+            api_container = st.container()
+            with api_container:
+                col1, col2 = st.columns([0.97, 0.03])
+                # Put expander in first column
+                with col1:
+                    expander = st.expander(f"{api['method']} - {api['url']}",
+                                        expanded=False)
+                    with expander:
+                        st.json(api)
+                # Put delete button in second column, aligned with expander header
+                with col2:
+                    st.write("")  # Add some spacing to align with expander
+                    if st.button("🗑️", key=f"delete_{idx}", help="Delete API", 
+                                use_container_width=True):
+                        st.session_state.apis.pop(idx)
+                        st.rerun()
 
     if st.button("Start Performance Test",
                  type="primary",
