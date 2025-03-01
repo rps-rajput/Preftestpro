@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 st.set_page_config(page_title="API Performance Tester", layout="wide")
 
+
 def get_endpoint_name(url):
     """Extract endpoint name from full URL"""
     parsed = urlparse(url)
@@ -23,6 +24,7 @@ def get_endpoint_name(url):
         endpoint = path.split('/')[-2]
     return endpoint or url
 
+
 def clear_form():
     """Clear form inputs by updating the session state defaults"""
     if 'form_defaults' not in st.session_state:
@@ -32,6 +34,7 @@ def clear_form():
             "headers": "{}",
             "body": "{}"
         }
+
 
 def main():
     st.title("API Performance Testing Tool")
@@ -45,15 +48,19 @@ def main():
 
     with st.sidebar:
         st.header("Test Configuration")
-        test_mode = st.radio("Test Input Mode", ["Manual Entry", "Postman Collection"])
+        test_mode = st.radio("Test Input Mode",
+                             ["Manual Entry", "Postman Collection"])
 
         # Test configuration
         virtual_users = st.number_input("Virtual Users", min_value=1, value=10)
-        ramp_up_time = st.number_input("Ramp-up Time (seconds)", min_value=1, value=5)
+        ramp_up_time = st.number_input("Ramp-up Time (seconds)",
+                                       min_value=1,
+                                       value=5)
 
         # Authentication section in sidebar
         st.header("Authentication")
-        auth_type = st.selectbox("Authentication Type", ["None", "Bearer Token", "Basic Auth"])
+        auth_type = st.selectbox("Authentication Type",
+                                 ["None", "Bearer Token", "Basic Auth"])
         auth_details = {}
 
         if auth_type == "Bearer Token":
@@ -64,29 +71,25 @@ def main():
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             if username and password:
-                credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
+                credentials = base64.b64encode(
+                    f"{username}:{password}".encode()).decode()
                 auth_details = {"Authorization": f"Basic {credentials}"}
 
     if test_mode == "Manual Entry":
         st.subheader("Add API")
         with st.form("api_form"):
-            method = st.selectbox(
-                "HTTP Method",
-                ["GET", "POST", "PUT", "DELETE"],
-                key="form_method"
-            )
+            method = st.selectbox("HTTP Method",
+                                  ["GET", "POST", "PUT", "DELETE"],
+                                  key="form_method")
             url = st.text_input("API URL", key="form_url")
 
             headers = st.text_area(
                 "Headers (JSON format)",
                 value=st.session_state.form_defaults["headers"],
-                key="form_headers"
-            )
-            body = st.text_area(
-                "Request Body (JSON format)",
-                value=st.session_state.form_defaults["body"],
-                key="form_body"
-            )
+                key="form_headers")
+            body = st.text_area("Request Body (JSON format)",
+                                value=st.session_state.form_defaults["body"],
+                                key="form_body")
 
             submitted = st.form_submit_button("Add API")
             if submitted:
@@ -115,13 +118,17 @@ def main():
                     st.error("Invalid JSON format in headers or body")
 
     else:  # Postman Collection
-        uploaded_file = st.file_uploader("Upload Postman Collection", type=["json"])
+        uploaded_file = st.file_uploader("Upload Postman Collection",
+                                         type=["json"])
         if uploaded_file:
             collection = json.load(uploaded_file)
             imported_apis = []
             for item in collection.get("item", []):
                 request = item.get("request", {})
-                headers_dict = {h["key"]: h["value"] for h in request.get("header", [])}
+                headers_dict = {
+                    h["key"]: h["value"]
+                    for h in request.get("header", [])
+                }
                 headers_dict.update(auth_details)  # Add auth headers
                 api = {
                     "method": request.get("method", "GET"),
@@ -139,7 +146,8 @@ def main():
     if st.session_state.apis:
         st.subheader("Configured APIs")
         for idx, api in enumerate(st.session_state.apis):
-            expander = st.expander(f"{api['method']} - {api['url']}", expanded=False)
+            expander = st.expander(f"{api['method']} - {api['url']}",
+                                   expanded=False)
             with expander:
                 col1, col2 = st.columns([0.95, 0.05])
                 with col1:
@@ -149,7 +157,9 @@ def main():
                         st.session_state.apis.pop(idx)
                         st.rerun()
 
-    if st.button("Start Test", type="primary", disabled=len(st.session_state.apis) == 0):
+    if st.button("Start Performance Test",
+                 type="primary",
+                 disabled=len(st.session_state.apis) == 0):
         # Store test results in session state
         tester = APITester(st.session_state.apis, virtual_users, ramp_up_time)
         st.session_state.test_results = tester.run_test()
@@ -170,8 +180,10 @@ def main():
 
         # Calculate overall metrics
         total_requests = len(results)
-        avg_response_time = sum(r["response_time"] for r in results) / total_requests
-        error_rate = sum(1 for r in results if r["status_code"] >= 400) / total_requests * 100
+        avg_response_time = sum(r["response_time"]
+                                for r in results) / total_requests
+        error_rate = sum(1 for r in results
+                         if r["status_code"] >= 400) / total_requests * 100
 
         # Calculate percentiles
         p90 = df["response_time"].quantile(0.9)
@@ -200,50 +212,52 @@ def main():
 
         # Response time distribution
         st.subheader("Response Time Distribution")
-        fig_dist = px.histogram(
-            df,
-            x="response_time",
-            nbins=50,
-            labels={"response_time": "Response Time (ms)", "count": "Frequency"},
-            title="Response Time Distribution"
-        )
+        fig_dist = px.histogram(df,
+                                x="response_time",
+                                nbins=50,
+                                labels={
+                                    "response_time": "Response Time (ms)",
+                                    "count": "Frequency"
+                                },
+                                title="Response Time Distribution")
         fig_dist.update_layout(showlegend=False)
         st.plotly_chart(fig_dist, use_container_width=True)
 
         # Error rates analysis
         st.subheader("Error Rates Analysis")
-        error_rates = df[df["status_code"] >= 400].groupby("endpoint").size() / df.groupby("endpoint").size()
+        error_rates = df[df["status_code"] >= 400].groupby(
+            "endpoint").size() / df.groupby("endpoint").size()
         error_rates = error_rates.sort_values(ascending=False).head()
         fig_errors = px.bar(
             x=error_rates.index,
             y=error_rates.values * 100,  # Convert to percentage
-            labels={"y": "Error Rate (%)", "x": "API Endpoint"},
-            title="Error Rates by API"
-        )
-        fig_errors.update_layout(
-            yaxis_tickformat=',.1f',
-            yaxis_title="Error Rate (%)",
-            xaxis_title="API Endpoint",
-            showlegend=False,
-            xaxis_tickangle=0
-        )
+            labels={
+                "y": "Error Rate (%)",
+                "x": "API Endpoint"
+            },
+            title="Error Rates by API")
+        fig_errors.update_layout(yaxis_tickformat=',.1f',
+                                 yaxis_title="Error Rate (%)",
+                                 xaxis_title="API Endpoint",
+                                 showlegend=False,
+                                 xaxis_tickangle=0)
         st.plotly_chart(fig_errors, use_container_width=True)
 
         # Slowest APIs analysis
         st.subheader("Slowest APIs Analysis")
-        avg_times = df.groupby("endpoint")["response_time"].mean().sort_values(ascending=False).head()
-        fig_slow = px.bar(
-            x=avg_times.index,
-            y=avg_times.values,
-            labels={"y": "Average Response Time (ms)", "x": "API Endpoint"},
-            title="Top 5 Slowest APIs"
-        )
-        fig_slow.update_layout(
-            yaxis_title="Average Response Time (ms)",
-            xaxis_title="API Endpoint",
-            showlegend=False,
-            xaxis_tickangle=0
-        )
+        avg_times = df.groupby("endpoint")["response_time"].mean().sort_values(
+            ascending=False).head()
+        fig_slow = px.bar(x=avg_times.index,
+                          y=avg_times.values,
+                          labels={
+                              "y": "Average Response Time (ms)",
+                              "x": "API Endpoint"
+                          },
+                          title="Top 5 Slowest APIs")
+        fig_slow.update_layout(yaxis_title="Average Response Time (ms)",
+                               xaxis_title="API Endpoint",
+                               showlegend=False,
+                               xaxis_tickangle=0)
         st.plotly_chart(fig_slow, use_container_width=True)
 
         # Add styling to error messages in dataframes
@@ -253,15 +267,20 @@ def main():
             color: #E74C3C;
         }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
 
         # Comprehensive API metrics
         st.subheader("Comprehensive API Metrics")
         api_metrics = df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
-            "status_code": lambda x: (x >= 400).mean() * 100
+            "status_code":
+            lambda x: (x >= 400).mean() * 100
         }).round(2)
-        api_metrics.columns = ["avg_response_time", "min_time", "max_time", "request_count", "error_rate"]
+        api_metrics.columns = [
+            "avg_response_time", "min_time", "max_time", "request_count",
+            "error_rate"
+        ]
 
         # Add percentiles
         api_metrics["p90"] = df.groupby("url")["response_time"].quantile(0.9)
@@ -269,26 +288,35 @@ def main():
         api_metrics["p99"] = df.groupby("url")["response_time"].quantile(0.99)
 
         # Add throughput (requests per second)
-        api_metrics["throughput"] = api_metrics["request_count"] / (virtual_users * ramp_up_time)
+        api_metrics["throughput"] = api_metrics["request_count"] / (
+            virtual_users * ramp_up_time)
 
         st.dataframe(api_metrics)
 
         # Top 5 APIs with highest error rates
         st.subheader("Top 5 APIs with Highest Error Rates")
         error_analysis = df[df["status_code"] >= 400].groupby("url").agg({
-            "status_code": "count",
-            "response_time": "mean",
-            "error_message": lambda x: x.iloc[0]  # Take first error message
+            "status_code":
+            "count",
+            "response_time":
+            "mean",
+            "error_message":
+            lambda x: x.iloc[0]  # Take first error message
         }).sort_values("status_code", ascending=False).head()
-        error_analysis.columns = ["total_requests", "avg_response_time", "error_message"]
+        error_analysis.columns = [
+            "total_requests", "avg_response_time", "error_message"
+        ]
         st.dataframe(error_analysis)
 
         # Top 5 slowest APIs with details
         st.subheader("Top 5 Slowest APIs")
         slowest_apis = df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
-            "status_code": lambda x: sum(x >= 400),  # Count errors instead of mean
-            "error_message": lambda x: next((msg for msg in x if msg), "")  # Get first non-empty error message
+            "status_code":
+            lambda x: sum(x >= 400),  # Count errors instead of mean
+            "error_message":
+            lambda x: next((msg for msg in x
+                            if msg), "")  # Get first non-empty error message
         }).sort_values(("response_time", "mean"), ascending=False).head()
         st.dataframe(slowest_apis)
 
@@ -296,23 +324,24 @@ def main():
         st.markdown("---")  # Add a separator
         st.header("Generate Report")
 
-        st.markdown("Interactive web-based report with detailed metrics and charts")
-        
+        st.markdown(
+            "Interactive web-based report with detailed metrics and charts")
+
         # Download report button with primary button styling (same as Start Test)
-        report_gen = ReportGenerator(
-            results,
-            virtual_users=virtual_users,
-            ramp_up_time=ramp_up_time
-        )
+        report_gen = ReportGenerator(results,
+                                     virtual_users=virtual_users,
+                                     ramp_up_time=ramp_up_time)
         report_html = report_gen.generate_html_report()
         st.download_button(
             label="Generate Report",
             data=report_html,
-            file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+            file_name=
+            f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
             mime="text/html",
             help="Download detailed performance report",
             type="primary"  # Use primary button type like Start Test button
         )
+
 
 if __name__ == "__main__":
     main()
