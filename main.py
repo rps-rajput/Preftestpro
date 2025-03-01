@@ -254,21 +254,6 @@ def main():
         .error-message {
             color: #E74C3C;
         }
-        .stDownloadButton {
-            background-color: #3498DB;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            display: block;
-            margin: 20px auto;
-            text-align: center;
-        }
-        .stDownloadButton:hover {
-            background-color: #2980B9;
-        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -313,25 +298,23 @@ def main():
         st.markdown("---")  # Add a separator
         st.header("Generate Report")
 
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("Interactive web-based report with detailed metrics and charts")
-        with col2:
-            # Download report button
-            report_gen = ReportGenerator(
-                results,
-                virtual_users=virtual_users,
-                ramp_up_time=ramp_up_time
-            )
-            report_html = report_gen.generate_html_report()
-            st.download_button(
-                label="Generate Report",
-                data=report_html,
-                file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                mime="text/html",
-                help="Download detailed performance report",
-                use_container_width=True,  # Make button full width
-            )
+        st.markdown("Interactive web-based report with detailed metrics and charts")
+        
+        # Download report button with primary button styling (same as Start Test)
+        report_gen = ReportGenerator(
+            results,
+            virtual_users=virtual_users,
+            ramp_up_time=ramp_up_time
+        )
+        report_html = report_gen.generate_html_report()
+        st.download_button(
+            label="Generate Report",
+            data=report_html,
+            file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+            mime="text/html",
+            help="Download detailed performance report",
+            type="primary"  # Use primary button type like Start Test button
+        )
 
 if __name__ == "__main__":
     main()
