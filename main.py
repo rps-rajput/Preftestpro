@@ -215,18 +215,19 @@ def main():
         # Error rates analysis
         st.subheader("Error Rates Analysis")
         error_rates = df[df["status_code"] >= 400].groupby("endpoint").size() / df.groupby("endpoint").size()
+        error_rates = error_rates.sort_values(ascending=False).head()
         fig_errors = px.bar(
-            y=error_rates.index,
-            x=error_rates.values * 100,  # Convert to percentage
-            orientation="h",
-            labels={"x": "Error Rate (%)", "y": "API Endpoint"},
+            x=error_rates.index,
+            y=error_rates.values * 100,  # Convert to percentage
+            labels={"y": "Error Rate (%)", "x": "API Endpoint"},
             title="Error Rates by API"
         )
         fig_errors.update_layout(
-            xaxis_tickformat=',.1f',
-            xaxis_title="Error Rate (%)",
-            yaxis_title="API Endpoint",
-            showlegend=False
+            yaxis_tickformat=',.1f',
+            yaxis_title="Error Rate (%)",
+            xaxis_title="API Endpoint",
+            showlegend=False,
+            xaxis_tickangle=-45
         )
         st.plotly_chart(fig_errors, use_container_width=True)
 
@@ -234,16 +235,16 @@ def main():
         st.subheader("Slowest APIs Analysis")
         avg_times = df.groupby("endpoint")["response_time"].mean().sort_values(ascending=False).head()
         fig_slow = px.bar(
-            y=avg_times.index,
-            x=avg_times.values,
-            orientation="h",
-            labels={"x": "Average Response Time (ms)", "y": "API Endpoint"},
+            x=avg_times.index,
+            y=avg_times.values,
+            labels={"y": "Average Response Time (ms)", "x": "API Endpoint"},
             title="Top 5 Slowest APIs"
         )
         fig_slow.update_layout(
-            xaxis_title="Average Response Time (ms)",
-            yaxis_title="API Endpoint",
-            showlegend=False
+            yaxis_title="Average Response Time (ms)",
+            xaxis_title="API Endpoint",
+            showlegend=False,
+            xaxis_tickangle=-45
         )
         st.plotly_chart(fig_slow, use_container_width=True)
 

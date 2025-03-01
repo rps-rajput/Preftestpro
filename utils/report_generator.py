@@ -38,15 +38,14 @@ class ReportGenerator:
                       .groupby("endpoint")
                       .size()
                       .divide(self.df.groupby("endpoint").size())
-                      .sort_values(ascending=True)
-                      .tail(5))  # Show top 5 APIs with highest error rates
+                      .sort_values(ascending=False)
+                      .head(5))  # Show top 5 APIs with highest error rates
 
         fig = px.bar(
-            y=error_rates.index,
-            x=error_rates.values * 100,  # Convert to percentage
-            orientation="h",
+            x=error_rates.index,
+            y=error_rates.values * 100,  # Convert to percentage
             title="Error Rates by API",
-            labels={"x": "Error Rate (%)", "y": "API Endpoint"},
+            labels={"y": "Error Rate (%)", "x": "API Endpoint"},
             text=error_rates.values * 100  # Show percentage on bars
         )
         fig.update_traces(
@@ -56,11 +55,11 @@ class ReportGenerator:
             textposition='outside'
         )
         fig.update_layout(
-            xaxis_tickformat=',.1f',
-            xaxis_title="Error Rate (%)",
-            yaxis_title="API Endpoint",
+            yaxis_tickformat=',.1f',
+            yaxis_title="Error Rate (%)",
+            xaxis_title="API Endpoint",
             showlegend=False,
-            yaxis_tickangle=0
+            xaxis_tickangle=-45
         )
         return fig.to_html(full_html=False)
 
@@ -68,15 +67,14 @@ class ReportGenerator:
         """Creates a bar chart of slowest APIs"""
         avg_times = (self.df.groupby("endpoint")["response_time"]
                     .mean()
-                    .sort_values(ascending=True)
-                    .tail(5))  # Show top 5 slowest APIs
+                    .sort_values(ascending=False)
+                    .head(5))  # Show top 5 slowest APIs
 
         fig = px.bar(
-            y=avg_times.index,
-            x=avg_times.values,
-            orientation="h",
+            x=avg_times.index,
+            y=avg_times.values,
             title="Top 5 Slowest APIs",
-            labels={"x": "Average Response Time (ms)", "y": "API Endpoint"},
+            labels={"y": "Average Response Time (ms)", "x": "API Endpoint"},
             text=avg_times.values
         )
         fig.update_traces(
@@ -86,10 +84,10 @@ class ReportGenerator:
             textposition='outside'
         )
         fig.update_layout(
-            xaxis_title="Average Response Time (ms)",
-            yaxis_title="API Endpoint",
+            yaxis_title="Average Response Time (ms)",
+            xaxis_title="API Endpoint",
             showlegend=False,
-            yaxis_tickangle=0
+            xaxis_tickangle=-45
         )
         return fig.to_html(full_html=False)
 
