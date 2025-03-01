@@ -24,11 +24,14 @@ def get_endpoint_name(url):
     return endpoint or url
 
 def clear_form():
-    """Clear form inputs"""
-    st.session_state.method = "GET"
-    st.session_state.url = ""
-    st.session_state.headers = "{}"
-    st.session_state.body = "{}"
+    """Clear form inputs by updating the session state defaults"""
+    if 'form_defaults' not in st.session_state:
+        st.session_state.form_defaults = {
+            "method": "GET",
+            "url": "",
+            "headers": "{}",
+            "body": "{}"
+        }
 
 def main():
     st.title("API Performance Testing Tool")
@@ -37,15 +40,8 @@ def main():
     if 'apis' not in st.session_state:
         st.session_state.apis = []
 
-    # Initialize form state if not present
-    if 'method' not in st.session_state:
-        st.session_state.method = "GET"
-    if 'url' not in st.session_state:
-        st.session_state.url = ""
-    if 'headers' not in st.session_state:
-        st.session_state.headers = "{}"
-    if 'body' not in st.session_state:
-        st.session_state.body = "{}"
+    # Initialize form defaults
+    clear_form()
 
     with st.sidebar:
         st.header("Test Configuration")
@@ -76,17 +72,29 @@ def main():
         with st.form("api_form"):
             col1, col2 = st.columns(2)
             with col1:
-                method = st.selectbox("HTTP Method", ["GET", "POST", "PUT", "DELETE"], key="method")
-                url = st.text_input("API URL", key="url")
+                method = st.selectbox(
+                    "HTTP Method",
+                    ["GET", "POST", "PUT", "DELETE"],
+                    key="form_method"
+                )
+                url = st.text_input("API URL", key="form_url")
 
-            headers = st.text_area("Headers (JSON format)", key="headers")
-            body = st.text_area("Request Body (JSON format)", key="body")
+            headers = st.text_area(
+                "Headers (JSON format)",
+                value=st.session_state.form_defaults["headers"],
+                key="form_headers"
+            )
+            body = st.text_area(
+                "Request Body (JSON format)",
+                value=st.session_state.form_defaults["body"],
+                key="form_body"
+            )
 
             submitted = st.form_submit_button("Add API")
             if submitted:
                 try:
                     headers_dict = json.loads(headers)
-                    headers_dict.update(auth_details)  # Add auth headers
+                    headers_dict.update(auth_details)
                     body_dict = json.loads(body)
 
                     api = {
@@ -97,7 +105,14 @@ def main():
                     }
                     st.session_state.apis.append(api)
                     st.success("API added successfully!")
-                    clear_form()  # Clear form after successful addition
+                    # Reset form defaults
+                    st.session_state.form_defaults = {
+                        "method": "GET",
+                        "url": "",
+                        "headers": "{}",
+                        "body": "{}"
+                    }
+                    st.rerun()
                 except json.JSONDecodeError:
                     st.error("Invalid JSON format in headers or body")
 
@@ -196,6 +211,11 @@ def main():
                 labels={"x": "API Endpoint", "y": "Error Rate"},
                 title="Error Rates by API"
             )
+            fig_errors.update_layout(
+                xaxis_tickangle=0,
+                xaxis_title="API Endpoint",
+                yaxis_title="Error Rate"
+            )
             st.plotly_chart(fig_errors, use_container_width=True)
 
             # Slowest APIs analysis
@@ -207,7 +227,45 @@ def main():
                 labels={"x": "API Endpoint", "y": "Average Response Time (ms)"},
                 title="Top 5 Slowest APIs"
             )
+            fig_slow.update_layout(
+                xaxis_tickangle=0,
+                xaxis_title="API Endpoint",
+                yaxis_title="Average Response Time (ms)"
+            )
             st.plotly_chart(fig_slow, use_container_width=True)
+
+            # Add styling to error messages in dataframes
+            st.markdown("""
+            <style>
+            .error-message {
+                color: #E74C3C;
+            }
+            .stDownloadButton {
+                background-color: #3498DB;
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+                font-weight: 500;
+            }
+            .stDownloadButton:hover {
+                background-color: #2980B9;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Download report
+            report_gen = ReportGenerator(results)
+            report_html = report_gen.generate_html_report()
+            b64 = base64.b64encode(report_html.encode()).decode()
+            st.download_button(
+                label="Download HTML Report",
+                data=report_html,
+                file_name=f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                mime="text/html",
+                help="Download detailed performance report"
+            )
 
             # Comprehensive API metrics
             st.subheader("Comprehensive API Metrics")
@@ -246,12 +304,6 @@ def main():
             }).sort_values(("response_time", "mean"), ascending=False).head()
             st.dataframe(slowest_apis)
 
-            # Download report
-            report_gen = ReportGenerator(results)
-            report_html = report_gen.generate_html_report()
-            b64 = base64.b64encode(report_html.encode()).decode()
-            href = f'<a href="data:text/html;base64,{b64}" download="performance_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html">Download HTML Report</a>'
-            st.markdown(href, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
