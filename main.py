@@ -458,6 +458,7 @@ def main():
             cols.remove("method")
             cols.remove("url")
             cols = ["method", "url"] + cols
+            error_analysis_display = error_analysis_display[cols]
             
             # Apply styling to error messages
             error_analysis_styled = error_analysis_display.copy()
@@ -492,6 +493,7 @@ def main():
         cols.remove("method")
         cols.remove("url")
         cols = ["method", "url"] + cols
+        slowest_apis_display = slowest_apis_display[cols]
         
         # Apply styling to error messages if present
         slowest_apis_styled = slowest_apis_display.copy()

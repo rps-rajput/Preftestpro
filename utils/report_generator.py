@@ -33,12 +33,29 @@ class ReportGenerator:
         )
         return fig.to_html(full_html=False)
 
+    def _get_shortened_endpoint(self, endpoint):
+        """Returns a shortened version of the endpoint for display in charts"""
+        # Find the last segment of the URL after /, = or other separators
+        separators = ['/', '=', '?', '&', '-', '_']
+        for sep in separators:
+            if sep in endpoint:
+                parts = endpoint.split(sep)
+                endpoint = parts[-1]  # Take the last part
+        # Limit to 15 characters max
+        if len(endpoint) > 15:
+            endpoint = endpoint[:12] + "..."
+        return endpoint
+        
     def _create_error_rate_plot(self):
         """Creates a bar chart of error rates by API"""
+        # Create shortened endpoint names
+        endpoint_mapping = {ep: self._get_shortened_endpoint(ep) for ep in self.df['endpoint'].unique()}
+        self.df['short_endpoint'] = self.df['endpoint'].map(endpoint_mapping)
+        
         error_rates = (self.df[self.df["status_code"] >= 400]
-                      .groupby("endpoint")
+                      .groupby("short_endpoint")
                       .size()
-                      .divide(self.df.groupby("endpoint").size())
+                      .divide(self.df.groupby("short_endpoint").size())
                       .sort_values(ascending=False)
                       .head(5))  # Show top 5 APIs with highest error rates
 
@@ -66,9 +83,14 @@ class ReportGenerator:
 
     def _create_slowest_apis_plot(self):
         """Creates a bar chart of slowest APIs"""
-        # Create a display name that includes method and endpoint
+        # Create shortened endpoint names if not already created
+        if 'short_endpoint' not in self.df.columns:
+            endpoint_mapping = {ep: self._get_shortened_endpoint(ep) for ep in self.df['endpoint'].unique()}
+            self.df['short_endpoint'] = self.df['endpoint'].map(endpoint_mapping)
+            
+        # Create a display name that includes method and shortened endpoint
         self.df['display_name'] = self.df.apply(
-            lambda row: f"{row['method']} - {row['endpoint']}", axis=1)
+            lambda row: f"{row['method']} - {row['short_endpoint']}", axis=1)
             
         avg_times = (self.df.groupby("display_name")["response_time"]
                     .mean()

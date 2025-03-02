@@ -167,6 +167,17 @@
     {% set error_html = error_analysis.to_html(classes="dataframe") %}
     {% set error_html_with_colors = error_html|replace('<td>No message</td>', '<td>No message</td>')|replace('<td>', '<td>')|replace('>4', ' class="error-message">4')|replace('>5', ' class="error-message">5') %}
     {{ error_html_with_colors | safe }}
+    <script>
+        // Apply error message styling to make sure error messages appear in red
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorCells = document.querySelectorAll('td:nth-child(5)'); // Error message column
+            errorCells.forEach(cell => {
+                if (cell.textContent.trim() !== '' && cell.textContent.trim() !== 'No message') {
+                    cell.classList.add('error-message');
+                }
+            });
+        });
+    </script>
     {% endif %}
 
     <h3>Top 5 Slowest APIs</h3>
