@@ -33,7 +33,8 @@ st.markdown("""
         background-color: #ff4b4b !important;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True)
 
 
 def get_endpoint_name(url):
@@ -65,25 +66,26 @@ def reset_all_data():
         del st.session_state.test_results
     if 'test_config' in st.session_state:
         del st.session_state.test_config
-    
+
     # Reset APIs list
     st.session_state.apis = []
-    
+
     # Reset form
     st.session_state.form_key = 0
     clear_form()
-    
+
     # Force a rerun to update the UI
     st.rerun()
 
+
 def main():
     # Simple title without a clear button next to it
-    st.title("API Performance Testing Tool")
+    st.title("Performance Testing Tool")
 
     # Initialize session state for storing APIs
     if 'apis' not in st.session_state:
         st.session_state.apis = []
-    
+
     # Form key for resetting the form completely
     if 'form_key' not in st.session_state:
         st.session_state.form_key = 0
@@ -94,7 +96,7 @@ def main():
     with st.sidebar:
         st.header("Test Configuration")
         test_mode = st.radio("Test Input Mode",
-                             ["Manual Entry", "Postman Collection"])
+                             ["Manual Entry", "File Upload"])
 
         # Test configuration
         virtual_users = st.number_input("Virtual Users", min_value=1, value=10)
@@ -103,9 +105,9 @@ def main():
                                        value=5)
 
         # Authentication section in sidebar
-        st.header("Authentication")
-        auth_type = st.selectbox("Authentication Type",
-                                 ["None", "Bearer Token", "Basic Auth"])
+        st.header("Authorization")
+        auth_type = st.selectbox("Auth Type",
+                                 ["No Auth", "Bearer Token", "Basic Auth"])
         auth_details = {}
 
         if auth_type == "Bearer Token":
@@ -152,7 +154,7 @@ def main():
                             "body": body_dict
                         }
                         st.session_state.apis.append(api)
-                        
+
                         # Reset form defaults
                         st.session_state.form_defaults = {
                             "method": "GET",
@@ -160,10 +162,10 @@ def main():
                             "headers": "{}",
                             "body": "{}"
                         }
-                        
+
                         # Increment form key to force complete reset
                         st.session_state.form_key += 1
-                        
+
                         st.rerun()
                     except json.JSONDecodeError:
                         st.error("Invalid JSON format in headers or body")
@@ -171,7 +173,9 @@ def main():
         # Display success message outside the form if an API was just added
         if 'apis' in st.session_state and len(st.session_state.apis) > 0:
             if not submitted:  # Only show after rerun to avoid double messages
-                st.success(f"API added successfully! Total APIs: {len(st.session_state.apis)}")
+                st.success(
+                    f"API added successfully! Total APIs: {len(st.session_state.apis)}"
+                )
 
     else:  # Postman Collection
         uploaded_file = st.file_uploader("Upload Postman Collection",
@@ -206,8 +210,8 @@ def main():
             api_container = st.container()
             with api_container:
                 expander = st.expander(f"{api['method']} - {api['url']}",
-                                    expanded=False)
-                
+                                       expanded=False)
+
                 # Add custom CSS to position the delete button inside the expander
                 st.markdown(f"""
                 <style>
@@ -220,15 +224,18 @@ def main():
                     vertical-align: middle;
                 }}
                 </style>
-                """, unsafe_allow_html=True)
-                
+                """,
+                            unsafe_allow_html=True)
+
                 # Display API details inside the expander
                 with expander:
                     # Add the delete button at the top inside expander
                     col1, col2 = st.columns([0.97, 0.03])
                     with col2:
-                        if st.button("🗑️", key=f"delete_{idx}", help="Delete API", 
-                                    use_container_width=True):
+                        if st.button("🗑️",
+                                     key=f"delete_{idx}",
+                                     help="Delete API",
+                                     use_container_width=True):
                             st.session_state.apis.pop(idx)
                             st.rerun()
                     # Show API JSON
@@ -316,10 +323,10 @@ def main():
                 },
                 title="Error Rates by API")
             fig_errors.update_layout(yaxis_tickformat=',.1f',
-                                    yaxis_title="Error Rate (%)",
-                                    xaxis_title="API Endpoint",
-                                    showlegend=False,
-                                    xaxis_tickangle=0)
+                                     yaxis_title="Error Rate (%)",
+                                     xaxis_title="API Endpoint",
+                                     showlegend=False,
+                                     xaxis_tickangle=0)
             st.plotly_chart(fig_errors, use_container_width=True)
 
         # Slowest APIs analysis
@@ -409,7 +416,7 @@ def main():
 
         # Create a row for buttons at the bottom
         report_col1, report_col2 = st.columns(2)
-        
+
         # Download report button in first column
         with report_col1:
             report_gen = ReportGenerator(results,
@@ -426,14 +433,16 @@ def main():
                 type="primary",  # Use primary button type like Start Test button
                 use_container_width=True  # Make button full width of column
             )
-            
+
         # Clear All button in second column
         with report_col2:
-            if st.button("🗑️ Clear All", 
-                         key="clear_all_btn", 
-                         help="Clear all results and start a new test",
-                         type="secondary",  # Use secondary button type for contrast
-                         use_container_width=True):  # Make button full width of column
+            if st.button(
+                    "🗑️ Clear All",
+                    key="clear_all_btn",
+                    help="Clear all results and start a new test",
+                    type="secondary",  # Use secondary button type for contrast
+                    use_container_width=True
+            ):  # Make button full width of column
                 reset_all_data()
 
 
