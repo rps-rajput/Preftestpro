@@ -156,7 +156,9 @@
     <h2>Detailed Analysis</h2>
     {% if has_errors %}
     <h3>Top 5 APIs with Highest Error Rates</h3>
-    {{ error_analysis.to_html(classes="dataframe") | safe }}
+    {% set error_html = error_analysis.to_html(classes="dataframe") %}
+    {% set error_html_with_colors = error_html|replace('<td>No message</td>', '<td>No message</td>')|replace('<td>', '<td>')|replace('>4', ' class="error-message">4')|replace('>5', ' class="error-message">5') %}
+    {{ error_html_with_colors | safe }}
     {% endif %}
 
     <h3>Top 5 Slowest APIs</h3>

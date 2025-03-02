@@ -190,11 +190,22 @@ def main():
                     for h in request.get("header", [])
                 }
                 headers_dict.update(auth_details)  # Add auth headers
+                body_raw = request.get("body", {}).get("raw", "{}")
+                try:
+                    # Try to parse the body if it's a JSON string
+                    if isinstance(body_raw, str) and body_raw.strip().startswith("{"):
+                        body_dict = json.loads(body_raw)
+                    else:
+                        body_dict = body_raw
+                except json.JSONDecodeError:
+                    # If parsing fails, keep it as is
+                    body_dict = body_raw
+                
                 api = {
                     "method": request.get("method", "GET"),
                     "url": request.get("url", {}).get("raw", ""),
                     "headers": headers_dict,
-                    "body": request.get("body", {}).get("raw", "{}")
+                    "body": body_dict
                 }
                 imported_apis.append(api)
 
@@ -304,7 +315,7 @@ def main():
                                     "count": "Frequency"
                                 },
                                 title="Response Time Distribution")
-        fig_dist.update_layout(showlegend=False)
+        fig_dist.update_layout(showlegend=False, bargap=0.05)
         st.plotly_chart(fig_dist, use_container_width=True)
 
         # Error rates analysis - only show if errors exist
@@ -343,7 +354,8 @@ def main():
         fig_slow.update_layout(yaxis_title="Average Response Time (ms)",
                                xaxis_title="API Endpoint",
                                showlegend=False,
-                               xaxis_tickangle=0)
+                               xaxis_tickangle=0,
+                               bargap=0.2)
         st.plotly_chart(fig_slow, use_container_width=True)
 
         # Add styling to error messages in dataframes

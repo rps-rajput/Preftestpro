@@ -28,7 +28,8 @@ class ReportGenerator:
         fig.update_layout(
             showlegend=False,
             plot_bgcolor="white",
-            paper_bgcolor="white"
+            paper_bgcolor="white",
+            bargap=0.05  # Add gap between bars
         )
         return fig.to_html(full_html=False)
 
@@ -87,12 +88,16 @@ class ReportGenerator:
             yaxis_title="Average Response Time (ms)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=0
+            xaxis_tickangle=0,
+            bargap=0.2  # Add gap between bars
         )
         return fig.to_html(full_html=False)
 
     def _calculate_api_metrics(self):
         """Calculates comprehensive metrics for each API"""
+        # First, get the method for each URL (taking the first method if multiple)
+        method_by_url = self.df.groupby("url")["method"].first()
+        
         metrics = self.df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
             "status_code": lambda x: (x >= 400).mean() * 100
@@ -119,7 +124,17 @@ class ReportGenerator:
         # Flatten column names
         metrics.columns = ["avg_response_time", "min_time", "max_time", "request_count", 
                          "error_rate", "p90", "p95", "p99", "throughput"]
-        return metrics.reset_index()
+        
+        # Add method column and reorder
+        result = metrics.reset_index()
+        result["method"] = result["url"].map(method_by_url)
+        
+        # Reorder columns to put method after URL
+        cols = list(result.columns)
+        cols.remove("method")
+        cols.insert(1, "method")  # Insert method after url
+        
+        return result[cols]
 
     def _analyze_errors(self):
         """Analyzes top 5 APIs with highest error rates"""
