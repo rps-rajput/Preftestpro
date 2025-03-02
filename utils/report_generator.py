@@ -66,7 +66,11 @@ class ReportGenerator:
 
     def _create_slowest_apis_plot(self):
         """Creates a bar chart of slowest APIs"""
-        avg_times = (self.df.groupby("endpoint")["response_time"]
+        # Create a display name that includes method and endpoint
+        self.df['display_name'] = self.df.apply(
+            lambda row: f"{row['method']} - {row['endpoint']}", axis=1)
+            
+        avg_times = (self.df.groupby("display_name")["response_time"]
                     .mean()
                     .sort_values(ascending=False)
                     .head(5))  # Show top 5 slowest APIs
@@ -88,8 +92,15 @@ class ReportGenerator:
             yaxis_title="Average Response Time (ms)",
             xaxis_title="API Endpoint",
             showlegend=False,
-            xaxis_tickangle=0,
+            xaxis_tickangle=15,  # Angle the labels slightly for better readability
             bargap=0.2  # Add gap between bars
+        )
+        # Improve x-axis labels display
+        fig.update_xaxes(
+            tickmode='array',
+            tickvals=list(range(len(avg_times))),
+            ticktext=avg_times.index,
+            tickfont=dict(size=10)
         )
         return fig.to_html(full_html=False)
 
@@ -129,10 +140,11 @@ class ReportGenerator:
         result = metrics.reset_index()
         result["method"] = result["url"].map(method_by_url)
         
-        # Reorder columns to put method after URL
+        # Reorder columns to put method before URL
         cols = list(result.columns)
         cols.remove("method")
-        cols.insert(1, "method")  # Insert method after url
+        cols.remove("url")
+        cols = ["method", "url"] + cols
         
         return result[cols]
 
@@ -142,28 +154,47 @@ class ReportGenerator:
         error_analysis = error_df.groupby("url").agg({
             "status_code": "count",
             "response_time": "mean",
-            "error_message": lambda x: x.iloc[0] if len(x) > 0 else ""
+            "error_message": lambda x: x.iloc[0] if len(x) > 0 else "",
+            "method": lambda x: x.iloc[0]  # Get the method for each URL
         }).sort_values("status_code", ascending=False).head()
 
-        error_analysis.columns = ["total_errors", "avg_response_time", "error_message"]
+        error_analysis.columns = ["total_errors", "avg_response_time", "error_message", "method"]
         error_analysis["error_rate"] = (error_analysis["total_errors"] / 
                                       self.df.groupby("url").size() * 100)
 
-        return error_analysis.reset_index()
+        result = error_analysis.reset_index()
+        
+        # Reorder columns to put method before URL
+        cols = list(result.columns)
+        cols.remove("method")
+        cols.remove("url")
+        cols = ["method", "url"] + cols
+        
+        return result[cols]
 
     def _analyze_slowest_apis(self):
         """Analyzes top 5 slowest APIs with details"""
         result = (self.df.groupby("url").agg({
             "response_time": ["mean", "min", "max"],
             "status_code": lambda x: sum(x >= 400),
-            "error_message": lambda x: x.iloc[0] if any(x.notna()) else ""
+            "error_message": lambda x: x.iloc[0] if any(x.notna()) else "",
+            "method": lambda x: x.iloc[0]  # Get the method for each URL
         }).sort_values(("response_time", "mean"), ascending=False)
         .head())
 
         # Flatten multi-level columns
         result.columns = ['mean_response_time', 'min_response_time', 'max_response_time', 
-                         'error_count', 'error_message']
-        return result.reset_index()
+                         'error_count', 'error_message', 'method']
+        
+        result = result.reset_index()
+        
+        # Reorder columns to put method before URL
+        cols = list(result.columns)
+        cols.remove("method")
+        cols.remove("url")
+        cols = ["method", "url"] + cols
+        
+        return result[cols]
 
     def generate_html_report(self):
         # Calculate metrics

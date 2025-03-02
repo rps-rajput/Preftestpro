@@ -342,10 +342,17 @@ def main():
 
         # Slowest APIs analysis
         st.subheader("Slowest APIs Analysis")
-        avg_times = df.groupby("endpoint")["response_time"].mean().sort_values(
+        # Create a dataframe with method and endpoint for better display
+        method_endpoint_df = df.copy()
+        method_endpoint_df['display_name'] = method_endpoint_df.apply(
+            lambda row: f"{row['method']} - {row['endpoint']}", axis=1)
+        
+        # Group by the display name instead of just endpoint
+        avg_times_with_method = method_endpoint_df.groupby("display_name")["response_time"].mean().sort_values(
             ascending=False).head()
-        fig_slow = px.bar(x=avg_times.index,
-                          y=avg_times.values,
+        
+        fig_slow = px.bar(x=avg_times_with_method.index,
+                          y=avg_times_with_method.values,
                           labels={
                               "y": "Average Response Time (ms)",
                               "x": "API Endpoint"
@@ -356,6 +363,12 @@ def main():
                                showlegend=False,
                                xaxis_tickangle=0,
                                bargap=0.2)
+        # Improve x-axis labels display
+        fig_slow.update_xaxes(tickmode='array', 
+                            tickvals=list(range(len(avg_times_with_method))),
+                            ticktext=avg_times_with_method.index,
+                            tickangle=15,
+                            tickfont=dict(size=10))
         st.plotly_chart(fig_slow, use_container_width=True)
 
         # Add styling to error messages in dataframes
@@ -370,6 +383,9 @@ def main():
 
         # Comprehensive API metrics
         st.subheader("Comprehensive API Metrics")
+        # Get the method for each URL (taking the first method if multiple)
+        method_by_url = df.groupby("url")["method"].first()
+        
         api_metrics = df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
             "status_code":
@@ -388,36 +404,101 @@ def main():
         # Add throughput (requests per second)
         api_metrics["throughput"] = api_metrics["request_count"] / (
             virtual_users * ramp_up_time)
+            
+        # Add method column and reorder
+        api_metrics_display = api_metrics.reset_index()
+        api_metrics_display["method"] = api_metrics_display["url"].map(method_by_url)
+        
+        # Reorder columns to put method before URL
+        cols = list(api_metrics_display.columns)
+        cols.remove("method")
+        cols.remove("url")
+        cols = ["method", "url"] + cols
+        
+        st.dataframe(api_metrics_display[cols])
 
-        st.dataframe(api_metrics)
-
+        # Add styling for error messages in dataframes
+        st.markdown("""
+        <style>
+        .error-message {
+            color: #E74C3C !important;
+            font-weight: bold;
+        }
+        
+        /* Make sure the style applies to Streamlit elements */
+        .stDataFrame td.error-message {
+            color: #E74C3C !important;
+            font-weight: bold;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         # Top 5 APIs with highest error rates - only show if errors exist
         if has_errors:
             st.subheader("Top 5 APIs with Highest Error Rates")
+            # Get the method for each URL for error analysis
+            method_by_url = df.groupby("url")["method"].first()
+            
             error_analysis = df[df["status_code"] >= 400].groupby("url").agg({
-                "status_code":
-                "count",
-                "response_time":
-                "mean",
-                "error_message":
-                lambda x: x.iloc[0]  # Take first error message
+                "status_code": "count",
+                "response_time": "mean",
+                "error_message": lambda x: x.iloc[0]  # Take first error message
             }).sort_values("status_code", ascending=False).head()
+            
             error_analysis.columns = [
                 "total_requests", "avg_response_time", "error_message"
             ]
-            st.dataframe(error_analysis)
+            
+            # Add method column and reorder
+            error_analysis_display = error_analysis.reset_index()
+            error_analysis_display["method"] = error_analysis_display["url"].map(method_by_url)
+            
+            # Reorder columns to put method before URL
+            cols = list(error_analysis_display.columns)
+            cols.remove("method")
+            cols.remove("url")
+            cols = ["method", "url"] + cols
+            
+            # Apply styling to error messages
+            error_analysis_styled = error_analysis_display.copy()
+            error_analysis_styled["error_message"] = error_analysis_styled["error_message"].apply(
+                lambda x: f'<span class="error-message">{x}</span>')
+            
+            st.write(error_analysis_styled.to_html(escape=False, index=False), unsafe_allow_html=True)
 
         # Top 5 slowest APIs with details
         st.subheader("Top 5 Slowest APIs")
+        # Get the method for each URL for slowest APIs
+        method_by_url = df.groupby("url")["method"].first()
+        
         slowest_apis = df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
-            "status_code":
-            lambda x: sum(x >= 400),  # Count errors instead of mean
-            "error_message":
-            lambda x: next((msg for msg in x
-                            if msg), "")  # Get first non-empty error message
+            "status_code": lambda x: sum(x >= 400),  # Count errors instead of mean
+            "error_message": lambda x: next((msg for msg in x if msg), "")  # Get first non-empty error message
         }).sort_values(("response_time", "mean"), ascending=False).head()
-        st.dataframe(slowest_apis)
+        
+        # Flatten columns
+        slowest_apis.columns = [
+            "mean_response_time", "min_response_time", "max_response_time", 
+            "request_count", "error_count", "error_message"
+        ]
+        
+        # Add method column and reorder
+        slowest_apis_display = slowest_apis.reset_index()
+        slowest_apis_display["method"] = slowest_apis_display["url"].map(method_by_url)
+        
+        # Reorder columns to put method before URL
+        cols = list(slowest_apis_display.columns)
+        cols.remove("method")
+        cols.remove("url")
+        cols = ["method", "url"] + cols
+        
+        # Apply styling to error messages if present
+        slowest_apis_styled = slowest_apis_display.copy()
+        slowest_apis_styled["error_message"] = slowest_apis_styled["error_message"].apply(
+            lambda x: f'<span class="error-message">{x}</span>' if x else x)
+        
+        st.write(slowest_apis_styled.to_html(escape=False, index=False), unsafe_allow_html=True)
 
         # Generate Report section at the end
         st.markdown("---")  # Add a separator

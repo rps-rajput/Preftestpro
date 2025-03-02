@@ -100,7 +100,15 @@
 
         /* Error message styling */
         .error-message {
-            color: #E74C3C;
+            color: #E74C3C !important;
+            font-weight: bold;
+        }
+
+        /* Ensure error messages display correctly in all contexts */
+        table td .error-message,
+        table td.error-message {
+            color: #E74C3C !important;
+            font-weight: bold;
         }
     </style>
 </head>
