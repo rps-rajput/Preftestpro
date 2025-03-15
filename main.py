@@ -191,16 +191,18 @@ def main():
                 }
                 headers_dict.update(auth_details)  # Add auth headers
                 body_raw = request.get("body", {}).get("raw", "{}")
-                try:
-                    # Try to parse the body if it's a JSON string
-                    if isinstance(body_raw, str) and body_raw.strip().startswith("{"):
-                        body_dict = json.loads(body_raw)
-                    else:
-                        body_dict = body_raw
-                except json.JSONDecodeError:
-                    # If parsing fails, keep it as is
-                    body_dict = body_raw
-                
+
+                # Check if body_raw is a string with double quotes and parse it
+                if isinstance(body_raw, str):
+                    # Remove outer quotes if they exist
+                    body_raw = body_raw.strip('"')
+                    try:
+                        body_dict = json.loads(body_raw)  # Parse the cleaned string
+                    except json.JSONDecodeError:
+                        body_dict = body_raw  # Keep as is if parsing fails
+                else:
+                    body_dict = body_raw  # If not a string, use as is
+
                 api = {
                     "method": request.get("method", "GET"),
                     "url": request.get("url", {}).get("raw", ""),
