@@ -18,7 +18,7 @@ class APITester:
                 url=api["url"],
                 headers=api["headers"],
                 json=api.get("body", None),
-                timeout=30
+                timeout=60
             )
             
             return {
