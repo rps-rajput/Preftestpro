@@ -315,49 +315,6 @@ st.markdown("""
     div[data-testid="column"]:first-child {
         padding-right: 5px !important;
     }
-    
-    /* Align the edit and delete buttons at the same level as View Details */
-    div[data-testid="stExpander"] {
-        margin-bottom: 0 !important;
-    }
-    
-    /* Style for the edit/delete button container */
-    div[data-testid="column"]:nth-child(3) {
-        display: flex !important;
-        align-items: flex-start !important;
-        justify-content: flex-end !important;
-        padding-right: 0 !important;
-    }
-    
-    /* Make edit and delete buttons more compact */
-    div[data-testid="column"]:nth-child(3) button {
-        padding: 0 !important;
-        min-width: 35px !important;
-    }
-    
-    /* Ensure buttons align with the View Details expander */
-    .stExpander {
-        margin-right: 0 !important;
-        width: 100% !important;
-    }
-    
-    /* Adjust the right column to align buttons with View Details expander */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child {
-        margin-right: 5px !important;
-        padding-right: 0 !important;
-    }
-    
-    /* Fix spacing in the position column */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child {
-        padding-right: 0 !important;
-        padding-left: 5px !important;
-    }
-    
-    /* Make number input more compact */
-    div[data-testid="stNumberInput"] > div {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -792,12 +749,12 @@ def main():
                     # Current position (1-based index)
                     current_pos = idx + 1
                     
-                    # Create custom label with tooltip using HTML and CSS - positioned to align with method badge
+                    # Create custom label with tooltip using HTML and CSS
                     st.markdown(f"""
-                    <div class="position-label" style="display: flex; align-items: center; margin-bottom: 0px; margin-top: 0px;">
-                        <span style="margin-right: 2px; font-size: 17px; color: #aaaaaa;">Position</span>
-                        <div class="tooltip" style="position: relative; display: inline-block; margin-left: 3px; cursor: help;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#9E9E9E" viewBox="0 0 16 16">
+                    <div class="position-label" style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <span>Position</span>
+                        <div class="tooltip" style="position: relative; display: inline-block; margin-left: 5px; cursor: help;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#9E9E9E" viewBox="0 0 16 16">
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                                 <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                             </svg>
@@ -823,41 +780,17 @@ def main():
                     <style>
                     /* Target the button's parent column specifically */
                     div.row-widget.stHorizontal > div:nth-child(2) > div {
-                    position: relative;
-                    top: -12px;
+                        position: relative;
+                        top: -12px;
                     }
                     </style>
                     """, unsafe_allow_html=True)
                     
-                    # Better aligned position input and move button with tighter spacing
-                    pos_col1, pos_col2 = st.columns([2.8, 1.2])
+                    # Better aligned position input and move button with adjusted spacing
+                    pos_col1, pos_col2 = st.columns([2.5, 1.5])
                     
                     with pos_col1:
-                        # Position number input without label - with custom CSS to align with API URL
-                        st.markdown(f"""
-                        <style>
-                        /* Align this specific number input with the API URL */
-                        [data-testid="stNumberInput"][key="pos_{idx}"] {{
-                            margin-top: -30px !important; /* Negative margin to pull the input field up */
-                            margin-bottom: 0px !important;
-                            padding-bottom: 0px !important;
-                        }}
-                        /* Adjust input field style to align with URL */
-                        [data-testid="stNumberInput"][key="pos_{idx}"] input {{
-                            height: 28px !important;
-                            padding-top: 0px !important;
-                            padding-bottom: 0px !important;
-                            margin-top: 0px !important;
-                        }}
-                        /* Remove extra padding from the label div */
-                        [data-testid="stNumberInput"][key="pos_{idx}"] > div {{
-                            padding-bottom: 0px !important;
-                            margin-bottom: 0px !important;
-                            padding-top: 0px !important;
-                        }}
-                        </style>
-                        """, unsafe_allow_html=True)
-                        
+                        # Position number input without label
                         new_pos = st.number_input(
                             label="Position Number", 
                             min_value=1,
@@ -876,9 +809,9 @@ def main():
                         
                         # Only show Move icon if position has changed AND this API wasn't just moved
                         if new_pos != current_pos and not st.session_state[just_moved_key]:
-                            # Direct HTML wrapper with a precise negative margin for alignment
+                            # Direct HTML wrapper with a more extreme negative margin for precise alignment
                             st.markdown("""
-                            <div style="margin-top: -30px; position: relative; z-index: 100;">
+                            <div style="margin-top: -75px; position: relative; z-index: 100;">
                             """, unsafe_allow_html=True)
                             
                             # Simple button without extra styling
@@ -976,13 +909,13 @@ def main():
                                 st.session_state[edit_name_key] = False
                                 st.rerun()
                     else:
-                        # Method badge and API name without edit button
+                        # Method badge and API name with edit button separately
                         name_row = st.container()
                         
                         with name_row:
-                            # Use columns for layout - method badge and API name only 
-                            # Removed edit button from here and will place it at the end
-                            mcol1, mcol2 = st.columns([0.15, 0.85])
+                            # Use columns for layout - method badge, API name, and edit icon
+                            # Further adjusted column widths for better alignment and button spacing
+                            mcol1, mcol2, mcol3 = st.columns([0.15, 0.75, 0.1])
                             
                             with mcol1:
                                 # Method badge - better styling with bigger text
@@ -1003,12 +936,30 @@ def main():
                                     {api_name}
                                 </div>
                                 """, unsafe_allow_html=True)
+                            
+                            with mcol3:
+                                # Create a more compact edit button with better positioning
+                                st.markdown("""
+                                <div style="display:flex; justify-content:center; align-items:center; 
+                                    height:100%; margin-top:0px; margin-left:-10px; margin-right:5px;">
+                                """, unsafe_allow_html=True)
+                                
+                                edit_clicked = st.button("✏️", 
+                                    key=f"edit_btn_{idx}", 
+                                    help="Edit API Name",
+                                    use_container_width=False)
+                                
+                                st.markdown("</div>", unsafe_allow_html=True)
+                                
+                                if edit_clicked:
+                                    st.session_state[edit_name_key] = True
+                                    st.rerun()
                         
-                        # URL display with proper wrapping and increased top margin to avoid overlap
+                        # URL display with proper wrapping and adjusted right margin for button space
                         st.markdown(f"""
                         <div style="font-size:15px; color:rgb(224, 224, 224); 
                             overflow-wrap:break-word; word-break:break-word; 
-                            width:100%; margin-top:20px; padding-right:10px;">
+                            width:98%; margin-top:-30px; padding-right:10px;">
                             {api['url']}
                         </div>
                         """, unsafe_allow_html=True)
@@ -1017,46 +968,16 @@ def main():
                 with st.expander("View Details", expanded=False):
                     st.json(api)
                 
-                # Move both edit and delete buttons to the right column aligned with the View Details box
+                # Delete button in right column with better right alignment
                 with cols[2]:
-                    # Custom styling to match buttons with "View Details" expander position
-                    st.markdown(f"""
-                    <style>
-                    /* Target buttons specifically for this API row */
-                    [data-testid="stHorizontalBlock"] button[key="edit_btn_{idx}"],
-                    [data-testid="stHorizontalBlock"] button[key="delete_{idx}"] {{
-                        margin-top: 4px !important;
-                    }}
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    # Container with precise alignment to match the View Details box
                     st.markdown("""
-                    <div style="display: flex; justify-content: flex-end; gap: 4px; margin-top: -1px; margin-bottom: 5px;">
+                    <div style="display:flex; justify-content:flex-end; margin-top:4px;">
                     """, unsafe_allow_html=True)
                     
-                    # Edit button first (left)
-                    edit_col, delete_col = st.columns([1, 1])
-                    with edit_col:
-                        edit_clicked = st.button("✏️", 
-                                        key=f"edit_btn_{idx}", 
-                                        help="Edit API Name",
-                                        use_container_width=True)
-                    
-                    # Delete button second (right)
-                    with delete_col:
-                        delete_clicked = st.button("🗑️", 
-                                          key=f"delete_{idx}", 
-                                          help="Delete API",
-                                          use_container_width=True)
+                    delete_clicked = st.button("🗑️", key=f"delete_{idx}", help="Delete API")
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     
-                    # Handle button clicks
-                    if edit_clicked:
-                        st.session_state[edit_name_key] = True
-                        st.rerun()
-                        
                     if delete_clicked:
                         # Get current APIs list
                         updated_apis = [api for i, api in enumerate(st.session_state.apis) if i != idx]
@@ -1340,32 +1261,12 @@ def main():
         
         /* Consistent URL styling across all tables */
         .stDataFrame td:nth-child(3), 
-        table.dataframe td:nth-child(3),
-        div.dataframe-container table td:nth-child(3),
-        div[data-testid="stTable"] table td:nth-child(3) {
-            font-size: 15px !important;
-            color: rgb(224, 224, 224) !important;
-            overflow-wrap: break-word !important;
-            word-break: break-word !important;
-            max-width: 400px !important;
-            white-space: normal !important;
-        }
-        
-        /* Ensure all dataframe containers have consistent styling */
-        div.dataframe-container {
-            width: 100%;
-        }
-        
-        div.dataframe-container table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        /* Ensure all table cells have consistent padding */
-        div.dataframe-container table td,
-        div[data-testid="stTable"] table td,
-        .stDataFrame td {
-            padding: 8px !important;
+        table.dataframe td:nth-child(3) {
+            font-size: 15px;
+            color: rgb(224, 224, 224);
+            overflow-wrap: break-word;
+            word-break: break-word;
+            max-width: 400px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -1373,7 +1274,7 @@ def main():
         # Top 5 APIs with highest error rates - only show if errors exist
         if has_errors:
             st.subheader("Top 5 APIs with Highest Error Rates")
-                        # Get the method for each URL for error analysis
+            # Get the method for each URL for error analysis
             method_by_url = df.groupby("url")["method"].first()
             
             # Get the name for each URL if available
@@ -1411,20 +1312,17 @@ def main():
                 cols.remove("url")
                 cols = ["method", "url"] + cols
             
-            # Apply final column ordering
             error_analysis_display = error_analysis_display[cols]
             
-            # Create a style function to highlight error messages in red
-            def highlight_error_messages(val):
-                if val.name == 'error_message':
-                    return ['color: #E74C3C; font-weight: bold' if v else '' for v in val.astype(bool)]
-                return ['' for _ in range(len(val))]
+            # Apply styling to error messages
+            error_analysis_styled = error_analysis_display.copy()
+            error_analysis_styled["error_message"] = error_analysis_styled["error_message"].apply(
+                lambda x: f'<span class="error-message">{x}</span>')
             
-            # Display interactive dataframe with the same features as Comprehensive API Metrics
-            st.dataframe(
-                error_analysis_display.style.apply(highlight_error_messages),
-                use_container_width=True,
-                hide_index=True
+            # Add CSS class for consistent styling
+            st.write(
+                f'<div class="dataframe-container">{error_analysis_styled.to_html(escape=False, index=False, classes="dataframe")}</div>', 
+                unsafe_allow_html=True
             )
 
         # Top 5 slowest APIs with details
@@ -1469,20 +1367,17 @@ def main():
             cols.remove("url")
             cols = ["method", "url"] + cols
 
-        # Apply final column ordering
         slowest_apis_display = slowest_apis_display[cols]
         
-        # Create a style function to highlight error messages in red
-        def highlight_error_messages(val):
-            if val.name == 'error_message':
-                return ['color: #E74C3C; font-weight: bold' if v else '' for v in val.astype(bool)]
-            return ['' for _ in range(len(val))]
+        # Apply styling to error messages if present
+        slowest_apis_styled = slowest_apis_display.copy()
+        slowest_apis_styled["error_message"] = slowest_apis_styled["error_message"].apply(
+            lambda x: f'<span class="error-message">{x}</span>' if x else x)
         
-        # Display interactive dataframe with the same features as Comprehensive API Metrics
-        st.dataframe(
-            slowest_apis_display.style.apply(highlight_error_messages),
-            use_container_width=True,
-            hide_index=True
+        # Add CSS class for consistent styling
+        st.write(
+            f'<div class="dataframe-container">{slowest_apis_styled.to_html(escape=False, index=False, classes="dataframe")}</div>', 
+            unsafe_allow_html=True
         )
 
         # Generate Report section at the end

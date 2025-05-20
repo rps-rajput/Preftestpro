@@ -22,6 +22,7 @@ class APITester:
             )
             
             return {
+                "name": api.get("name", ""),  # Include the API name in results
                 "url": api["url"],
                 "method": api["method"],
                 "status_code": response.status_code,
@@ -31,6 +32,7 @@ class APITester:
             
         except requests.exceptions.RequestException as e:
             return {
+                "name": api.get("name", ""),  # Include the API name in results
                 "url": api["url"],
                 "method": api["method"],
                 "status_code": 500,
