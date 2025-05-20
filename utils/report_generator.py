@@ -12,9 +12,10 @@ class ReportGenerator:
         self.df = pd.DataFrame(results)
         # Convert status_code to numeric type
         self.df['status_code'] = pd.to_numeric(self.df['status_code'], errors='coerce')
-        # Add endpoint names for better display
-        self.df['endpoint'] = self.df['url'].apply(lambda x: x.split('/')[-1])
-
+        # Add endpoint names for better display if not already present
+        if 'name' not in self.df.columns or self.df['name'].isna().all() or (self.df['name'] == '').all():
+            self.df['name'] = self.df['url'].apply(self._get_shortened_endpoint)
+        
     def _create_response_time_plot(self):
         """Creates a histogram of response times"""
         fig = px.histogram(
@@ -48,14 +49,15 @@ class ReportGenerator:
         
     def _create_error_rate_plot(self):
         """Creates a bar chart of error rates by API"""
-        # Create shortened endpoint names
-        endpoint_mapping = {ep: self._get_shortened_endpoint(ep) for ep in self.df['endpoint'].unique()}
-        self.df['short_endpoint'] = self.df['endpoint'].map(endpoint_mapping)
-        
+        # Use name field instead of endpoint
+        if 'name' not in self.df.columns:
+            self.df['name'] = self.df['url'].apply(self._get_shortened_endpoint)
+            
+        # Group by name directly since it's already shortened
         error_rates = (self.df[self.df["status_code"] >= 400]
-                      .groupby("short_endpoint")
+                      .groupby("name")
                       .size()
-                      .divide(self.df.groupby("short_endpoint").size())
+                      .divide(self.df.groupby("name").size())
                       .sort_values(ascending=False)
                       .head(5))  # Show top 5 APIs with highest error rates
 
@@ -83,14 +85,13 @@ class ReportGenerator:
 
     def _create_slowest_apis_plot(self):
         """Creates a bar chart of slowest APIs"""
-        # Create shortened endpoint names if not already created
-        if 'short_endpoint' not in self.df.columns:
-            endpoint_mapping = {ep: self._get_shortened_endpoint(ep) for ep in self.df['endpoint'].unique()}
-            self.df['short_endpoint'] = self.df['endpoint'].map(endpoint_mapping)
+        # Use name field which is already available
+        if 'name' not in self.df.columns:
+            self.df['name'] = self.df['url'].apply(self._get_shortened_endpoint)
             
-        # Create a display name that includes method and shortened endpoint
+        # Create a display name that includes method and name
         self.df['display_name'] = self.df.apply(
-            lambda row: f"{row['method']} - {row['short_endpoint']}", axis=1)
+            lambda row: f"{row['method']} - {row['name']}", axis=1)
             
         avg_times = (self.df.groupby("display_name")["response_time"]
                     .mean()
@@ -131,6 +132,9 @@ class ReportGenerator:
         # First, get the method for each URL (taking the first method if multiple)
         method_by_url = self.df.groupby("url")["method"].first()
         
+        # Get name for each URL
+        name_by_url = self.df.groupby("url")["name"].first()
+        
         metrics = self.df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
             "status_code": lambda x: (x >= 400).mean() * 100
@@ -158,15 +162,17 @@ class ReportGenerator:
         metrics.columns = ["avg_response_time", "min_time", "max_time", "request_count", 
                          "error_rate", "p90", "p95", "p99", "throughput"]
         
-        # Add method column and reorder
+        # Add method and name columns and reorder
         result = metrics.reset_index()
         result["method"] = result["url"].map(method_by_url)
+        result["name"] = result["url"].map(name_by_url)
         
-        # Reorder columns to put method before URL
+        # Reorder columns to put method first, then name, then URL
         cols = list(result.columns)
         cols.remove("method")
         cols.remove("url")
-        cols = ["method", "url"] + cols
+        cols.remove("name")
+        cols = ["method", "name", "url"] + cols
         
         return result[cols]
 
@@ -186,11 +192,23 @@ class ReportGenerator:
 
         result = error_analysis.reset_index()
         
-        # Reorder columns to put method before URL
-        cols = list(result.columns)
-        cols.remove("method")
-        cols.remove("url")
-        cols = ["method", "url"] + cols
+        # Add name column if available
+        if 'name' in self.df.columns:
+            name_by_url = self.df.groupby("url")["name"].first()
+            result["name"] = result["url"].map(name_by_url)
+            
+            # Reorder columns to put method first, then name, then URL
+            cols = list(result.columns)
+            cols.remove("method")
+            cols.remove("url")
+            cols.remove("name")
+            cols = ["method", "name", "url"] + cols
+        else:
+            # Reorder columns to put method before URL
+            cols = list(result.columns)
+            cols.remove("method")
+            cols.remove("url")
+            cols = ["method", "url"] + cols
         
         return result[cols]
 
@@ -210,11 +228,23 @@ class ReportGenerator:
         
         result = result.reset_index()
         
-        # Reorder columns to put method before URL
-        cols = list(result.columns)
-        cols.remove("method")
-        cols.remove("url")
-        cols = ["method", "url"] + cols
+        # Add name column if available
+        if 'name' in self.df.columns:
+            name_by_url = self.df.groupby("url")["name"].first()
+            result["name"] = result["url"].map(name_by_url)
+            
+            # Reorder columns to put method first, then name, then URL
+            cols = list(result.columns)
+            cols.remove("method")
+            cols.remove("url")
+            cols.remove("name")
+            cols = ["method", "name", "url"] + cols
+        else:
+            # Reorder columns to put method before URL
+            cols = list(result.columns)
+            cols.remove("method")
+            cols.remove("url")
+            cols = ["method", "url"] + cols
         
         return result[cols]
 
