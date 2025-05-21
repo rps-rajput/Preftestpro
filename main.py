@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import pandas as pd
+import numpy as np
 from utils.api_tester import APITester
 from utils.report_generator import ReportGenerator
 import plotly.graph_objects as go
@@ -15,6 +16,27 @@ from footer import display_footer  # Import the footer display function
 from streamlit import session_state as st_session  # Import session state for managing modal visibility
 
 from streamlit_sortables import sort_items
+
+# Function to format dataframes with consistent decimal places
+def format_dataframe(df):
+    """Format a dataframe to ensure all numeric values have consistent decimal places."""
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return df
+    
+    # Create a copy of the dataframe
+    formatted_df = df.copy()
+    
+    # Process all columns
+    for col in formatted_df.columns:
+        # Skip non-numeric columns
+        if formatted_df[col].dtype.kind not in 'ifc':
+            continue
+        
+        # Format floating point numbers to 1 decimal place
+        if formatted_df[col].dtype.kind == 'f':
+            formatted_df[col] = formatted_df[col].round(1)
+    
+    return formatted_df
 
 st.set_page_config(page_title="API Performance Tester", layout="wide")
 
@@ -525,6 +547,24 @@ def parse_blazmeter_json(blazmeter_data):
         apis.append(api)
     
     return apis
+
+
+def get_successful_apis(df):
+    """
+    Filter a dataframe to include only APIs that were successful (status code < 400) for all requests.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame containing API test results
+        
+    Returns:
+        pandas.DataFrame: Filtered DataFrame containing only successful API results
+    """
+    # Get URLs where all requests were successful (status code < 400)
+    successful_urls = df.groupby("url")["status_code"].apply(lambda x: all(x < 400))
+    successful_urls = successful_urls[successful_urls].index.tolist()
+    
+    # Return filtered dataframe with only successful APIs
+    return df[df["url"].isin(successful_urls)]
 
 
 def main():
@@ -1065,56 +1105,6 @@ def main():
                         # Refresh the page
                         st.rerun()
 
-    #Initialize containers for modals
-    faq_modal = st.empty()
-    about_modal = st.empty()
-
-    # Sidebar for navigation
-    st.sidebar.title("Navigation")
-    if st.sidebar.button("FAQ"):
-        toggle_faq()  # Toggle FAQ modal visibility
-
-    if st.sidebar.button("About"):
-        toggle_about()  # Toggle About modal visibility
-
-    # FAQ Modal
-    if st_session.show_faq:
-        faq_modal.markdown(f"""
-        <div class="modal">
-            <div class="modal-content">
-                <svg class="close" width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg" style="stroke: currentcolor;">
-                    <path d="M9 1L5 5M1 9L5 5M5 5L1 1M5 5L9 9" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-                <h2>Frequently Asked Questions</h2>
-                <div>
-                    <p>Question 1 - What is this application?</p>
-                    <p> Answer - This application is designed to test the performance of APIs.</p>
-                    <p>Question 2 - How do I use it?</p>
-                    <p> Answer - You can input your API details and click on 'Start Performance Test'.</p>
-                    <p>Question 3 - What metrics are displayed?</p>
-                    <p> Answer - The application shows response times, error rates, and more.</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # About Modal
-    if st_session.show_about:
-        about_modal.markdown(f"""
-        <div class="modal">
-            <div class="modal-content">
-                <svg class="close" width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg" style="stroke: currentcolor;">
-                    <path d="M9 1L5 5M1 9L5 5M5 5L1 1M5 5L9 9" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-                <h2>About</h2>
-                <p>For any queries, please send an email to <strong>rps.rajputt@gmail.com</strong>.</p>
-                <p>You can also reach out to us at <strong>rps.rajputt@gmail.com</strong> for further assistance.</p>
-                <p>Copyright 2025 Snowflake Inc. All rights reserved.</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
     # Add a button to start the performance test
     if st.button("Start Performance Test",
                  type="primary",
@@ -1153,17 +1143,17 @@ def main():
         df = pd.DataFrame(results)
         df['status_code'] = pd.to_numeric(df['status_code'], errors='coerce')
 
-        # Calculate overall metrics
+        # Calculate overall metrics and round to 1 decimal place
         total_requests = len(results)
-        avg_response_time = sum(r["response_time"]
-                                for r in results) / total_requests
-        error_rate = sum(1 for r in results
-                         if r["status_code"] >= 400) / total_requests * 100
+        avg_response_time = round(sum(r["response_time"]
+                                for r in results) / total_requests, 1)
+        error_rate = round(sum(1 for r in results
+                         if r["status_code"] >= 400) / total_requests * 100, 1)
 
-        # Calculate percentiles
-        p90 = df["response_time"].quantile(0.9)
-        p95 = df["response_time"].quantile(0.95)
-        p99 = df["response_time"].quantile(0.99)
+        # Calculate percentiles and round to 1 decimal place
+        p90 = round(df["response_time"].quantile(0.9), 1)
+        p95 = round(df["response_time"].quantile(0.95), 1)
+        p99 = round(df["response_time"].quantile(0.99), 1)
 
         st.header("Test Results")
 
@@ -1228,40 +1218,50 @@ def main():
                                      xaxis_tickangle=0)
             st.plotly_chart(fig_errors, use_container_width=True)
 
-        # Slowest APIs analysis
+        # Slowest APIs analysis (excluding failed APIs)
         st.subheader("Slowest APIs Analysis")
-        # Create a dataframe with method, name, and endpoint for better display
-        method_endpoint_df = df.copy()
-        if 'name' in df.columns:
-            method_endpoint_df['display_name'] = method_endpoint_df.apply(
-                lambda row: f"{row['name']} - {row['method']}", axis=1)
-        else:
-            method_endpoint_df['display_name'] = method_endpoint_df.apply(
-                lambda row: f"{row['method']} - {row['endpoint']}", axis=1)
-
-        # Group by the display name instead of just endpoint
-        avg_times_with_method = method_endpoint_df.groupby("display_name")["response_time"].mean().sort_values(
-            ascending=False).head()
         
-        fig_slow = px.bar(x=avg_times_with_method.index,
-                          y=avg_times_with_method.values,
-                          labels={
-                              "y": "Average Response Time (ms)",
-                              "x": "API Endpoint"
-                          },
-                          title="Top 5 Slowest APIs")
-        fig_slow.update_layout(yaxis_title="Average Response Time (ms)",
-                               xaxis_title="API Endpoint",
-                               showlegend=False,
-                               xaxis_tickangle=0,
-                               bargap=0.2)
-        # Improve x-axis labels display
-        fig_slow.update_xaxes(tickmode='array', 
-                            tickvals=list(range(len(avg_times_with_method))),
-                            ticktext=avg_times_with_method.index,
-                            tickangle=15,
-                            tickfont=dict(size=10))
-        st.plotly_chart(fig_slow, use_container_width=True)
+        # Filter dataframe to only include successful APIs
+        df_successful = get_successful_apis(df)
+        
+        # If we have any successful APIs, show the bar chart
+        if len(df_successful) > 0:
+            # Create a dataframe with method, name, and endpoint for better display
+            method_endpoint_df = df_successful.copy()
+            if 'name' in df_successful.columns:
+                method_endpoint_df['display_name'] = method_endpoint_df.apply(
+                    lambda row: f"{row['name']} - {row['method']}", axis=1)
+            else:
+                method_endpoint_df['display_name'] = method_endpoint_df.apply(
+                    lambda row: f"{row['method']} - {row['endpoint']}", axis=1)
+
+            # Group by the display name instead of just endpoint
+            # Round all values to 1 decimal place
+            avg_times_with_method = method_endpoint_df.groupby("display_name")["response_time"].mean().round(1).sort_values(
+                ascending=False).head()
+            
+            fig_slow = px.bar(x=avg_times_with_method.index,
+                            y=avg_times_with_method.values,
+                            labels={
+                                "y": "Average Response Time (ms)",
+                                "x": "API Endpoint"
+                            },
+                            title="Top 5 Slowest APIs (Excluding Failed APIs)")
+            fig_slow.update_layout(yaxis_title="Average Response Time (ms)",
+                                xaxis_title="API Endpoint",
+                                showlegend=False,
+                                xaxis_tickangle=0,
+                                bargap=0.2)
+            # Improve x-axis labels display
+            fig_slow.update_xaxes(tickmode='array', 
+                                tickvals=list(range(len(avg_times_with_method))),
+                                ticktext=avg_times_with_method.index,
+                                tickangle=15,
+                                tickfont=dict(size=10))
+            st.plotly_chart(fig_slow, use_container_width=True)
+        else:
+            # No successful APIs to display
+            st.info("No successful APIs to display in the slowest APIs analysis. All APIs have errors.")
 
         # Add styling to error messages in dataframes
         st.markdown("""
@@ -1282,27 +1282,33 @@ def main():
         if 'name' in df.columns:
             name_by_url = df.groupby("url")["name"].first()
         
+        # Group metrics and round to 1 decimal place for all time-based metrics
+        # Round all numeric values to 1 decimal place consistently throughout the app
         api_metrics = df.groupby("url").agg({
             "response_time": ["mean", "min", "max", "count"],
             "status_code":
             lambda x: (x >= 400).mean() * 100
-        }).round(2)
+        })
+        
+        # Apply rounding to all float columns manually
+        for col in api_metrics.select_dtypes(include=['float64']).columns:
+            api_metrics[col] = api_metrics[col].round(1)
         api_metrics.columns = [
-            "avg_response_time", "min_time", "max_time", "request_count",
-            "error_rate"
+            "Avg Response Time", "Min Time", "Max Time", "Request Count",
+            "Error Rate"
         ]
 
-        # Add percentiles
-        api_metrics["p90"] = df.groupby("url")["response_time"].quantile(0.9)
-        api_metrics["p95"] = df.groupby("url")["response_time"].quantile(0.95)
-        api_metrics["p99"] = df.groupby("url")["response_time"].quantile(0.99)
+        # Add percentiles and round them to 1 decimal place
+        api_metrics["p90%"] = df.groupby("url")["response_time"].quantile(0.9).round(1)
+        api_metrics["p95%"] = df.groupby("url")["response_time"].quantile(0.95).round(1)
+        api_metrics["p99%"] = df.groupby("url")["response_time"].quantile(0.99).round(1)
 
-        # Add throughput (requests per second)
-        api_metrics["throughput"] = api_metrics["request_count"] / (
-            virtual_users * ramp_up_time)
+        # Add throughput (requests per second) and round to 1 decimal place
+        api_metrics["Throughput"] = (api_metrics["Request Count"] / (
+            virtual_users * ramp_up_time)).round(1)
             
         # Add method column and reorder
-        api_metrics_display = api_metrics.reset_index()
+        api_metrics_display = format_dataframe(api_metrics.reset_index())
         api_metrics_display["method"] = api_metrics_display["url"].map(method_by_url)
         
         # Add name column if available
@@ -1322,11 +1328,48 @@ def main():
             cols.remove("url")
             cols = ["method", "url"] + cols
 
-        st.dataframe(api_metrics_display[cols])
-
-        # Add styling for error messages in dataframes
+        # Apply final column ordering
+        api_metrics_display = api_metrics_display[cols]
+        
+        # Create a styling function to highlight response times > 10 seconds (10000ms) in red
+        # and format all time values to 1 decimal place
+        def highlight_high_response_times(val):
+            attr = 'color: red; font-weight: bold' 
+            is_high = pd.Series(False, index=val.index)
+            
+            # Apply red color ONLY to Avg Response Time > 10000ms (10 seconds)
+            if 'Avg Response Time' in val.index:
+                is_high['Avg Response Time'] = val['Avg Response Time'] > 10000
+                
+            # Also highlight error messages in red
+            if 'Error Message' in val.index:
+                error_msg = val['Error Message']
+                if isinstance(error_msg, str):
+                    is_high['Error Message'] = error_msg != ''
+                else:
+                    is_high['Error Message'] = False
+                
+            return [attr if v else '' for v in is_high]
+            
+        # Apply custom styling function and force float formatting
+        styled_df = api_metrics_display[cols].style.apply(highlight_high_response_times, axis=1)
+        
+        # Force 1 decimal place formatting for all float columns
+        float_cols = api_metrics_display[cols].select_dtypes(include=['float']).columns
+        if not float_cols.empty:
+            styled_df = styled_df.format({col: '{:.1f}' for col in float_cols})
+            
+        # Display dataframe with styling
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Add styling for dataframes
         st.markdown("""
         <style>
+        /* Styling for error messages */
         .error-message {
             color: #E74C3C !important;
             font-weight: bold;
@@ -1369,7 +1412,7 @@ def main():
         }
         </style>
         """, unsafe_allow_html=True)
-        
+
         # Top 5 APIs with highest error rates - only show if errors exist
         if has_errors:
             st.subheader("Top 5 APIs with Highest Error Rates")
@@ -1386,12 +1429,15 @@ def main():
                 "error_message": lambda x: x.iloc[0]  # Take first error message
             }).sort_values("status_code", ascending=False).head()
             
+            # Round response times to 1 decimal place
+            error_analysis["response_time"] = error_analysis["response_time"].round(1)
+            
             error_analysis.columns = [
-                "total_requests", "avg_response_time", "error_message"
+                "Total Requests", "Avg Response Time", "Error Message"
             ]
             
             # Add method column and reorder
-            error_analysis_display = error_analysis.reset_index()
+            error_analysis_display = format_dataframe(error_analysis.reset_index())
             error_analysis_display["method"] = error_analysis_display["url"].map(method_by_url)
             
             # Add name column if available
@@ -1414,21 +1460,44 @@ def main():
             # Apply final column ordering
             error_analysis_display = error_analysis_display[cols]
             
-            # Create a style function to highlight error messages in red
-            def highlight_error_messages(val):
-                if val.name == 'error_message':
-                    return ['color: #E74C3C; font-weight: bold' if v else '' for v in val.astype(bool)]
-                return ['' for _ in range(len(val))]
+            # Create a styling function to highlight error messages in red and high response times
+            def highlight_errors_and_times(val):
+                attr = 'color: red; font-weight: bold'
+                is_highlighted = pd.Series(False, index=val.index)
+                
+                # Highlight error messages - check if it's a string and not empty
+                if 'Error Message' in val.index:
+                    # Handle error message column - check if it's a non-empty string
+                    error_msg = val['Error Message']
+                    if isinstance(error_msg, str):
+                        is_highlighted['Error Message'] = error_msg != ''
+                    else:
+                        is_highlighted['Error Message'] = False
+                
+                # Highlight only Avg Response Time if > 10 seconds
+                if 'Avg Response Time' in val.index:
+                    is_highlighted['Avg Response Time'] = val['Avg Response Time'] > 10000
+                
+                return [attr if v else '' for v in is_highlighted]
             
+            # Apply custom styling function and force float formatting
+            styled_df = error_analysis_display.style.apply(highlight_errors_and_times, axis=1)
+            
+            # Force 1 decimal place formatting for all float columns
+            float_cols = error_analysis_display.select_dtypes(include=['float']).columns
+            if not float_cols.empty:
+                styled_df = styled_df.format({col: '{:.1f}' for col in float_cols})
+                
             # Display interactive dataframe with the same features as Comprehensive API Metrics
             st.dataframe(
-                error_analysis_display.style.apply(highlight_error_messages),
+                styled_df,
                 use_container_width=True,
                 hide_index=True
             )
 
-        # Top 5 slowest APIs with details
-        st.subheader("Top 5 Slowest APIs")
+        # Top 5 slowest APIs with details (excluding failed APIs)
+        st.subheader("Top 5 Slowest APIs (Excluding Failed APIs)")
+        
         # Get the method for each URL for slowest APIs
         method_by_url = df.groupby("url")["method"].first()
         
@@ -1436,54 +1505,81 @@ def main():
         if 'name' in df.columns:
             name_by_url = df.groupby("url")["name"].first()
 
-        slowest_apis = df.groupby("url").agg({
-            "response_time": ["mean", "min", "max", "count"],
-            "status_code": lambda x: sum(x >= 400),  # Count errors instead of mean
-            "error_message": lambda x: next((msg for msg in x if msg), "")  # Get first non-empty error message
-        }).sort_values(("response_time", "mean"), ascending=False).head()
+        # Filter dataframe to only include successful APIs
+        df_successful = get_successful_apis(df)
         
-        # Flatten columns
-        slowest_apis.columns = [
-            "mean_response_time", "min_response_time", "max_response_time", 
-            "request_count", "error_count", "error_message"
-        ]
-        
-        # Add method column and reorder
-        slowest_apis_display = slowest_apis.reset_index()
-        slowest_apis_display["method"] = slowest_apis_display["url"].map(method_by_url)
-        
-        # Add name column if available
-        if 'name' in df.columns:
-            slowest_apis_display["name"] = slowest_apis_display["url"].map(name_by_url)
+                # If we have any successful APIs, show them, otherwise display a message
+        if len(df_successful) > 0:
+            slowest_apis = df_successful.groupby("url").agg({
+                "response_time": ["mean", "min", "max", "count"]
+            }).sort_values(("response_time", "mean"), ascending=False).head()
             
-            # Reorder columns to put method first, then name, then URL
-            cols = list(slowest_apis_display.columns)
-            cols.remove("method")
-            cols.remove("url")
-            cols.remove("name")
-            cols = ["method", "name", "url"] + cols
-        else:
-            # Reorder columns to put method before URL
-            cols = list(slowest_apis_display.columns)
-            cols.remove("method")
-            cols.remove("url")
-            cols = ["method", "url"] + cols
+            # Round all time-based metrics to 1 decimal place
+            for col in [("response_time", "mean"), ("response_time", "min"), ("response_time", "max")]:
+                slowest_apis[col] = slowest_apis[col].round(1)
+                
+            # Flatten columns
+            slowest_apis.columns = [
+                "Avg Response Time", "Min Response Time", "Max Response Time", 
+                "Request Count"
+            ]
+            
+            # No need to reorder here - we'll do it after adding other columns
+            
+            # Add method column and reorder
+            slowest_apis_display = format_dataframe(slowest_apis.reset_index())
+            slowest_apis_display["method"] = slowest_apis_display["url"].map(method_by_url)
+            
+            # Add name column if available
+            if 'name' in df.columns:
+                slowest_apis_display["name"] = slowest_apis_display["url"].map(name_by_url)
+                
+                # Reorder columns to put method first, then name, then URL, then Request Count
+                cols = list(slowest_apis_display.columns)
+                cols.remove("method")
+                cols.remove("url")
+                cols.remove("name")
+                cols.remove("Request Count")
+                cols = ["method", "name", "url", "Request Count"] + [c for c in cols if c != "Request Count"]
+            else:
+                # Reorder columns to put method before URL, followed by Request Count
+                cols = list(slowest_apis_display.columns)
+                cols.remove("method")
+                cols.remove("url")
+                cols.remove("Request Count")
+                cols = ["method", "url", "Request Count"] + [c for c in cols if c != "Request Count"]
 
-        # Apply final column ordering
-        slowest_apis_display = slowest_apis_display[cols]
-        
-        # Create a style function to highlight error messages in red
-        def highlight_error_messages(val):
-            if val.name == 'error_message':
-                return ['color: #E74C3C; font-weight: bold' if v else '' for v in val.astype(bool)]
-            return ['' for _ in range(len(val))]
-        
-        # Display interactive dataframe with the same features as Comprehensive API Metrics
-        st.dataframe(
-            slowest_apis_display.style.apply(highlight_error_messages),
-            use_container_width=True,
-            hide_index=True
-        )
+            # Apply final column ordering
+            slowest_apis_display = slowest_apis_display[cols]
+            
+            # Create a styling function to highlight high response times
+            def highlight_response_times(val):
+                attr = 'color: red; font-weight: bold'
+                is_highlighted = pd.Series(False, index=val.index)
+                
+                # Highlight only Avg Response Time if > 10 seconds (10000ms)
+                if 'Avg Response Time' in val.index:
+                    is_highlighted['Avg Response Time'] = val['Avg Response Time'] > 10000
+                
+                return [attr if v else '' for v in is_highlighted]
+            
+            # Apply custom styling function and force float formatting
+            styled_df = slowest_apis_display.style.apply(highlight_response_times, axis=1)
+            
+            # Force 1 decimal place formatting for all float columns
+            float_cols = slowest_apis_display.select_dtypes(include=['float']).columns
+            if not float_cols.empty:
+                styled_df = styled_df.format({col: '{:.1f}' for col in float_cols})
+                
+            # Display interactive dataframe with the same features as Comprehensive API Metrics
+            st.dataframe(
+                styled_df,
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            # No successful APIs to display
+            st.info("No successful APIs to display in the slowest APIs section. All APIs have errors.")
 
         # Generate Report section at the end
         st.markdown("---")  # Add a separator

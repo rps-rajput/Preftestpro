@@ -101,14 +101,29 @@
         /* Error message styling */
         .error-message {
             color: #E74C3C !important;
-            font-weight: bold;
+            font-weight: bold !important;
         }
 
         /* Ensure error messages display correctly in all contexts */
         table td .error-message,
         table td.error-message {
             color: #E74C3C !important;
-            font-weight: bold;
+            font-weight: bold !important;
+        }
+        
+        /* High response time styling (over 10 seconds) */
+        table td.high-response-time {
+            color: #E74C3C !important;
+            font-weight: bold !important;
+        }
+        
+        /* Force all error messages to be red */
+        td:has(> span:contains("Token is required")),
+        td:has(> span:contains("Invalid token")),
+        td:contains("Token is required"),
+        td:contains("Invalid token") {
+            color: #E74C3C !important;
+            font-weight: bold !important;
         }
         
         /* Consistent URL styling for 3rd column (URL) */
@@ -118,6 +133,12 @@
             overflow-wrap: break-word;
             word-break: break-word;
             max-width: 400px;
+        }
+        
+        /* Explicitly target Avg Response Time values over 10000 */
+        .avg-response-time-high {
+            color: #E74C3C !important;
+            font-weight: bold !important;
         }
     </style>
 </head>
@@ -144,7 +165,7 @@
         </div>
         <div class="metric-box">
             <h3>Avg Response Time</h3>
-            <p>{{ "%.2f"|format(avg_response_time) }}ms</p>
+            <p>{{ "%.1f"|format(avg_response_time) }}ms</p>
         </div>
         <div class="metric-box">
             <h3>Total Requests</h3>
@@ -152,7 +173,7 @@
         </div>
         <div class="metric-box">
             <h3>Error Rate</h3>
-            <p>{{ "%.2f"|format(error_rate) }}%</p>
+            <p>{{ "%.1f"|format(error_rate) }}%</p>
         </div>
     </div>
 
@@ -168,28 +189,119 @@
     {{ slowest_apis_plot | safe }}
 
     <h2>Comprehensive API Metrics</h2>
-    {{ api_metrics.to_html(classes="dataframe") | safe }}
+    {{ api_metrics | safe }}
 
     <h2>Detailed Analysis</h2>
     {% if has_errors %}
     <h3>Top 5 APIs with Highest Error Rates</h3>
-    {% set error_html = error_analysis.to_html(classes="dataframe") %}
-    {% set error_html_with_colors = error_html|replace('<td>No message</td>', '<td>No message</td>')|replace('<td>', '<td>')|replace('>4', ' class="error-message">4')|replace('>5', ' class="error-message">5') %}
-    {{ error_html_with_colors | safe }}
-    <script>
-        // Apply error message styling to make sure error messages appear in red
-        document.addEventListener('DOMContentLoaded', function() {
-            const errorCells = document.querySelectorAll('td:nth-child(5)'); // Error message column
-            errorCells.forEach(cell => {
-                if (cell.textContent.trim() !== '' && cell.textContent.trim() !== 'No message') {
-                    cell.classList.add('error-message');
-                }
-            });
-        });
-    </script>
+    {{ error_analysis | safe }}
     {% endif %}
 
-    <h3>Top 5 Slowest APIs</h3>
-    {{ slowest_apis.to_html(classes="dataframe") | safe }}
+    <h3>Top 5 Slowest APIs (Excluding Failed APIs)</h3>
+    {{ slowest_apis | safe }}
+
+    <script>
+        // Apply styling when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Simple function to only highlight Avg Response Time columns
+            function highlightOnlyAvgResponseTime() {
+                // Process each table in the report
+                document.querySelectorAll('table').forEach(function(table) {
+                    // Get the index of the Avg Response Time column
+                    let avgResponseTimeIndex = -1;
+                    const headers = table.querySelectorAll('th');
+                    
+                    // Find the Avg Response Time column by its exact header text
+                    for (let i = 0; i < headers.length; i++) {
+                        const headerText = headers[i].textContent.trim();
+                        if (headerText === 'Avg Response Time') {
+                            avgResponseTimeIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    // Only proceed if we found the Avg Response Time column
+                    if (avgResponseTimeIndex >= 0) {
+                        // Process all rows and highlight only cells in the Avg Response Time column
+                        const rows = table.querySelectorAll('tbody tr');
+                        rows.forEach(function(row) {
+                            const cells = row.querySelectorAll('td');
+                            
+                            // First, ensure no other cells have red styling
+                            for (let i = 0; i < cells.length; i++) {
+                                // Skip the Avg Response Time column as we'll handle it separately
+                                if (i !== avgResponseTimeIndex) {
+                                    cells[i].style.color = ''; // Reset color to default
+                                    cells[i].style.fontWeight = ''; // Reset font weight
+                                    
+                                    // Remove any existing high response time classes
+                                    cells[i].classList.remove('high-response-time');
+                                    cells[i].classList.remove('avg-response-time-high');
+                                }
+                            }
+                            
+                            // Now, handle the Avg Response Time column specifically
+                            if (avgResponseTimeIndex < cells.length) {
+                                const avgResponseCell = cells[avgResponseTimeIndex];
+                                const cellText = avgResponseCell.textContent.trim();
+                                const numericValue = parseFloat(cellText.replace(/[^\d.]/g, ''));
+                                
+                                // Only highlight if value > 10000 (10 seconds)
+                                if (!isNaN(numericValue) && numericValue > 10000) {
+                                    avgResponseCell.style.color = '#E74C3C';
+                                    avgResponseCell.style.fontWeight = 'bold';
+                                    avgResponseCell.classList.add('avg-response-time-high');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Make sure error messages are still highlighted
+            function highlightErrorMessages() {
+                document.querySelectorAll('table').forEach(function(table) {
+                    // Find the Error Message column
+                    let errorMessageIndex = -1;
+                    const headers = table.querySelectorAll('th');
+                    
+                    for (let i = 0; i < headers.length; i++) {
+                        if (headers[i].textContent.trim().includes('Error Message')) {
+                            errorMessageIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    if (errorMessageIndex >= 0) {
+                        // Process all rows
+                        const rows = table.querySelectorAll('tbody tr');
+                        rows.forEach(function(row) {
+                            const cells = row.querySelectorAll('td');
+                            
+                            if (errorMessageIndex < cells.length) {
+                                const errorCell = cells[errorMessageIndex];
+                                const errorText = errorCell.textContent.trim();
+                                
+                                if (errorText && errorText !== 'No message' && errorText !== 'None') {
+                                    errorCell.style.color = '#E74C3C';
+                                    errorCell.style.fontWeight = 'bold';
+                                    errorCell.classList.add('error-message');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Call our functions to apply styling
+            highlightOnlyAvgResponseTime();
+            highlightErrorMessages();
+            
+            // Add a safety timeout to reapply (in case any other scripts interfere)
+            setTimeout(function() {
+                highlightOnlyAvgResponseTime();
+            }, 100);
+        });
+    </script>
 </body>
 </html>
