@@ -1,0 +1,482 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Performance Test Report</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    padding: 20px;
+                }
+                .report-title {
+                    color: #2C3E50;
+                    text-align: center;
+                    padding: 20px 0;
+                    border-bottom: 2px solid #3498DB;
+                    margin-bottom: 30px;
+                }
+                .test-config {
+                    background: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                    color: #2C3E50;
+                    text-align: center;
+                    border-left: 4px solid #3498DB;
+                }
+                .metric-container {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 20px 0;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                }
+                .metric-box {
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 5px;
+                    text-align: center;
+                    flex: 1;
+                    min-width: 150px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .metric-box h3 {
+                    color: #2C3E50;
+                    margin-bottom: 10px;
+                    font-size: 14px;
+                }
+                .metric-box p {
+                    color: #3498DB;
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 0;
+                }
+                /* Single-line table styling */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 15px 0;
+                    font-size: 14px;
+                    border: none;
+                }
+                
+                th, td {
+                    padding: 8px;
+                    text-align: left;
+                    border: 1px solid #ddd;
+                    white-space: nowrap;
+                }
+                
+                th {
+                    background-color: #f8f9fa;
+                    font-weight: 500;
+                    border-bottom: 1px solid #ddd;
+                }
+                
+                tr:nth-child(even) {
+                    background-color: #ffffff;
+                }
+                
+                tr:nth-child(odd) {
+                    background-color: #f9f9f9;
+                }
+                
+                tr:hover {
+                    background-color: #f5f5f5;
+                }
+                
+                /* Override any double borders */
+                table, th, td {
+                    border-width: 1px !important;
+                }
+                
+                /* Report sections */
+                .section {
+                    background: white;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }
+                
+                .report-title {
+                    color: #333;
+                    margin-top: 0px;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            
+            <h1 class="report-title">Performance Test Report</h1>
+            
+            
+            <div class="test-config">
+                <p><strong>Test Configuration:</strong> Performance test executed with 10 virtual users 
+                and 5 seconds ramp-up time</p>
+            </div>
+            
+            
+            <div class="metric-container">
+                <div class="metric-box">
+                    <h3>Virtual Users</h3>
+                    <p>10</p>
+                </div>
+                <div class="metric-box">
+                    <h3>Ramp-up Time</h3>
+                    <p>5s</p>
+                </div>
+                <div class="metric-box">
+                    <h3>Total APIs Tested</h3>
+                    <p>12</p>
+                </div>
+                <div class="metric-box">
+                    <h3>Avg Response Time</h3>
+                    <p>968.07ms</p>
+                </div>
+                <div class="metric-box">
+                    <h3>Total Requests</h3>
+                    <p>120</p>
+                </div>
+                <div class="metric-box">
+                    <h3>Error Rate</h3>
+                    <p>100.00%</p>
+                </div>
+            </div>
+
+            <h2>Response Time Distribution</h2>
+            <div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>                <div id="15931231-4322-439c-8d7f-9dd19f4c5927" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("15931231-4322-439c-8d7f-9dd19f4c5927")) {                    Plotly.newPlot(                        "15931231-4322-439c-8d7f-9dd19f4c5927",                        [{"bingroup":"x","hovertemplate":"Response Time (ms)=%{x}\u003cbr\u003ecount=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","marker":{"color":"#3498DB","opacity":0.75,"pattern":{"shape":""},"line":{"color":"#2980B9","width":1}},"name":"","nbinsx":50,"orientation":"v","showlegend":false,"x":{"dtype":"f8","bdata":"AAAAgvOtiEAAAACsTQaJQAAAABoZ8IhAAAAAQSYMiUAAAAB1ahuJQAAAAI904olAAAAAkOPMiUAAAACwlWOKQAAAAP9Bp4dAAAAAxJf\u002fh0AAAICjHFqaQAAAQJcEYLlAAAAAFGLwhkAAAAC\u002fumSHQAAAAMJRa4dAAAAAtOspiEAAAACfMjiJQAAAAAOypIlAAAAAQ6gTikAAAAAz\u002fLqKQAAAAB+NP45AAACAHgsLlEAAAABMcHeHQAAAAIPza4hAAAAAwVGth0AAAAAKSLiIQAAAAJe49o1AAAAAMasfmEAAAABVOTGYQAAAAByImJhAAACAV2tImkAAAAA+Z1maQAAAADzgtJpAAAAAXhnwmkAAAAA4WQWeQAAAwGD6eq5AAAAAlz15hkAAAAAZqpSGQAAAAFvxLYdAAAAAIIVSh0AAAAAIVECIQAAAANZyWIhAAAAAs6l2iEAAAADoIPGJQAAAAJB4Lo5AAAAAAqqylEAAAAC7zkWHQAAAAMBmJIlAAAAA5\u002fe\u002fhUAAAAB8cquFQAAAAPTKjYdAAAAA4kOeiEAAAABsFLeIQAAAAEVSzYhAAAAAkCTdiEAAAACqlfuJQAAAAE030I5AAAAAlUR2lEAAAADHdn2HQAAAAPrbhIhAAAAAgofRhUAAAABp3\u002f+GQAAAAO73XIdAAAAARw6Eh0AAAADgIu+HQAAAAHweKohAAAAAs1obiEAAAADeRYKIQAAAAFSVn4xAAAAA8v1ZlUAAAACWFn2HQAAAAKDS\u002f4lAAAAAKt3Hh0AAAAB3FNWHQAAAAD\u002fbXYlAAAAA98yLiUAAAACl1tiJQAAAALBH84lAAAAA\u002fX59ikAAAADj4BWMQAAAANi5s45AAACAjWujlUAAAAA+EEeFQAAAAINDsohAAAAAmpvHhkAAAACMOTKHQAAAABaohIdAAAAAV0wSiEAAAADrdnaIQAAAADHhk4hAAAAAqiT5iUAAAADk7ciJQAAAAHzlyo5AAACAKawdlEAAAABX71+IQAAAAKw9XIlAAAAAn7rghUAAAACVarGHQAAAAJ28LohAAAAAGo02iEAAAABjfUiIQAAAAKHIGIlAAAAA0SCGiUAAAABOEkSKQAAAAGGT1I1AAACAopLWlEAAAADEY2GHQAAAAIybY4pAAAAAl74lhkAAAACcZjeGQAAAAEoS54ZAAAAAZEcVh0AAAADb2HqHQAAAAG5oqIdAAAAAo3x3iEAAAAAGk\u002fiIQAAAAIKsjIxAAACAXzeyk0AAAACh4+GGQAAAABN36odA"},"xaxis":"x","yaxis":"y","type":"histogram","opacity":0.8}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1,"#000022"],[0.2,"#000023"],[0.3,"#000024"],[0.4,"#000025"],[0.5,"#000026"],[0.6,"#000027"],[0.7,"#000028"],[0.8,"#000029"],[0.9,"#000030"],[1.0,"#000031"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Response Time (ms)","font":{"size":14}},"gridcolor":"#E5E5E5"},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"count","font":{"size":14}},"gridcolor":"#E5E5E5"},"legend":{"tracegroupgap":0},"title":{"text":"Response Time Distribution","font":{"size":24},"x":0.5},"barmode":"relative","plot_bgcolor":"white","paper_bgcolor":"white","bargap":0.1,"showlegend":false},                        {"displayModeBar": true, "responsive": true}                    )                };            </script>        </div>
+            
+            <h2>Error Rates Analysis</h2>
+            <div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>                <div id="231a4306-81e8-49b9-84a0-8f81d71935d1" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("231a4306-81e8-49b9-84a0-8f81d71935d1")) {                    Plotly.newPlot(                        "231a4306-81e8-49b9-84a0-8f81d71935d1",                        [{"hovertemplate":"Full API: %{customdata}\u003cbr\u003eError Rate: %{y:.1%}\u003cbr\u003e\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","marker":{"color":"#FF6B6B","pattern":{"shape":""},"line":{"color":"#E74C3C","width":1}},"name":"","orientation":"v","showlegend":false,"textposition":"auto","x":["GetCurrentUser","Matchup","Outdoor","DuctlessFilterMap","Matchup"],"xaxis":"x","y":{"dtype":"f8","bdata":"AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA\u002fAAAAAAAA8D8AAAAAAADwPw=="},"yaxis":"y","type":"bar","customdata":["https:\u002f\u002fapitest.daikincity.com\u002fapi\u002fUser\u002fGetCurrentUser","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fminisplit\u002fdata\u002fMatchup","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fminisplit\u002fdata\u002fOutdoor","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fminisplit\u002fodata\u002fDuctlessFilterMap","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002funitary\u002fdata\u002fMatchup"],"opacity":0.8}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1,"#000022"],[0.2,"#000023"],[0.3,"#000024"],[0.4,"#000025"],[0.5,"#000026"],[0.6,"#000027"],[0.7,"#000028"],[0.8,"#000029"],[0.9,"#000030"],[1.0,"#000031"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"API Endpoint","font":{"size":14}},"tickangle":-45,"gridcolor":"#E5E5E5"},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Error Rate (%)","font":{"size":14}},"gridcolor":"#E5E5E5","tickformat":".1%"},"legend":{"tracegroupgap":0},"title":{"text":"Top 5 APIs with Highest Error Rates","font":{"size":24},"x":0.5},"barmode":"relative","plot_bgcolor":"white","paper_bgcolor":"white","showlegend":false},                        {"displayModeBar": true, "responsive": true}                    )                };            </script>        </div>
+            
+            <h2>Slowest APIs Analysis</h2>
+            <div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>                <div id="5ab9dba5-d7ec-4474-996a-60a07e2d00ec" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("5ab9dba5-d7ec-4474-996a-60a07e2d00ec")) {                    Plotly.newPlot(                        "5ab9dba5-d7ec-4474-996a-60a07e2d00ec",                        [{"hovertemplate":"Full API: %{customdata}\u003cbr\u003eResponse Time: %{y:.0f} ms\u003cbr\u003e\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","marker":{"color":"#2E86C1","pattern":{"shape":""},"line":{"color":"#2874A6","width":1}},"name":"","orientation":"v","showlegend":false,"textposition":"auto","x":["requestEntry","GetCurrentUser","Matchup","UserHistory","BrandMap"],"xaxis":"x","y":{"dtype":"f8","bdata":"AADAEzE3mUAAAAC+oKKXQAAAgMhvEoxAAAAAIw+ji0AAAAAoAJSLQA=="},"yaxis":"y","type":"bar","customdata":["https:\u002f\u002ftestapi.goodmanmfg.com\u002fSystemConfigurator\u002frequestEntry","https:\u002f\u002fapitest.daikincity.com\u002fapi\u002fUser\u002fGetCurrentUser","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fminisplit\u002fdata\u002fMatchup","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fusers\u002fodata\u002fUserHistory?filter=xpressId%20eq%204%20and%20addToCart%20eq%20true%20&$expand=accessories","https:\u002f\u002fmoxe9eq1de.execute-api.us-east-1.amazonaws.com\u002fusers\u002fodata\u002fBrandMap"],"opacity":0.8}],                        {"template":{"data":{"candlestick":[{"decreasing":{"line":{"color":"#000033"}},"increasing":{"line":{"color":"#000032"}},"type":"candlestick"}],"contourcarpet":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contourcarpet"}],"contour":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"contour"}],"heatmap":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"heatmap"}],"histogram2d":[{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"type":"histogram2d"}],"icicle":[{"textfont":{"color":"white"},"type":"icicle"}],"sankey":[{"textfont":{"color":"#000036"},"type":"sankey"}],"scatter":[{"marker":{"line":{"width":0}},"type":"scatter"}],"table":[{"cells":{"fill":{"color":"#000038"},"font":{"color":"#000037"},"line":{"color":"#000039"}},"header":{"fill":{"color":"#000040"},"font":{"color":"#000036"},"line":{"color":"#000039"}},"type":"table"}],"waterfall":[{"connector":{"line":{"color":"#000036","width":2}},"decreasing":{"marker":{"color":"#000033"}},"increasing":{"marker":{"color":"#000032"}},"totals":{"marker":{"color":"#000034"}},"type":"waterfall"}]},"layout":{"coloraxis":{"colorscale":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorscale":{"diverging":[[0.0,"#000021"],[0.1,"#000022"],[0.2,"#000023"],[0.3,"#000024"],[0.4,"#000025"],[0.5,"#000026"],[0.6,"#000027"],[0.7,"#000028"],[0.8,"#000029"],[0.9,"#000030"],[1.0,"#000031"]],"sequential":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]],"sequentialminus":[[0.0,"#000011"],[0.1111111111111111,"#000012"],[0.2222222222222222,"#000013"],[0.3333333333333333,"#000014"],[0.4444444444444444,"#000015"],[0.5555555555555556,"#000016"],[0.6666666666666666,"#000017"],[0.7777777777777778,"#000018"],[0.8888888888888888,"#000019"],[1.0,"#000020"]]},"colorway":["#000001","#000002","#000003","#000004","#000005","#000006","#000007","#000008","#000009","#000010"]}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"API Endpoint","font":{"size":14}},"tickangle":-45,"gridcolor":"#E5E5E5"},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Average Response Time (ms)","font":{"size":14}},"gridcolor":"#E5E5E5"},"legend":{"tracegroupgap":0},"title":{"text":"Top 5 Slowest APIs","font":{"size":24},"x":0.5},"barmode":"relative","plot_bgcolor":"white","paper_bgcolor":"white","showlegend":false},                        {"displayModeBar": true, "responsive": true}                    )                };            </script>        </div>
+            
+            <h2>Comprehensive API Metrics</h2>
+            <table border="1" class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>api</th>
+      <th>avg_response_time</th>
+      <th>min_time</th>
+      <th>max_time</th>
+      <th>request_count</th>
+      <th>p90</th>
+      <th>p95</th>
+      <th>p99</th>
+      <th>error_rate</th>
+      <th>throughput</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>https://apitest.daikincity.com/api/User/GetCurrentUser</td>
+      <td>1512.656975</td>
+      <td>913.584232</td>
+      <td>6496.017933</td>
+      <td>10</td>
+      <td>1537.026095</td>
+      <td>4016.522014</td>
+      <td>6000.118749</td>
+      <td>100.0</td>
+      <td>6.610884</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/data/Matchup</td>
+      <td>898.304582</td>
+      <td>680.882931</td>
+      <td>1921.337128</td>
+      <td>10</td>
+      <td>952.139568</td>
+      <td>1436.738348</td>
+      <td>1824.417372</td>
+      <td>100.0</td>
+      <td>11.132082</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/data/Outdoor</td>
+      <td>854.163337</td>
+      <td>732.236147</td>
+      <td>1724.024773</td>
+      <td>10</td>
+      <td>883.657146</td>
+      <td>1303.840959</td>
+      <td>1639.988010</td>
+      <td>100.0</td>
+      <td>11.707363</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/odata/DuctlessFilterMap</td>
+      <td>776.472449</td>
+      <td>722.583055</td>
+      <td>847.687006</td>
+      <td>10</td>
+      <td>827.373242</td>
+      <td>837.530124</td>
+      <td>845.655630</td>
+      <td>100.0</td>
+      <td>12.878757</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/unitary/data/Matchup</td>
+      <td>877.575254</td>
+      <td>732.883930</td>
+      <td>1682.104826</td>
+      <td>10</td>
+      <td>916.239095</td>
+      <td>1299.171960</td>
+      <td>1605.518253</td>
+      <td>100.0</td>
+      <td>11.395034</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/unitary/data/Outdoor</td>
+      <td>757.862639</td>
+      <td>693.430901</td>
+      <td>803.426981</td>
+      <td>10</td>
+      <td>792.274356</td>
+      <td>797.850668</td>
+      <td>802.311718</td>
+      <td>100.0</td>
+      <td>13.195003</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/unitary/odata/UnitaryMatchupDaikinFilterMap</td>
+      <td>861.832094</td>
+      <td>700.091124</td>
+      <td>1574.132919</td>
+      <td>10</td>
+      <td>917.416573</td>
+      <td>1245.774746</td>
+      <td>1508.461285</td>
+      <td>100.0</td>
+      <td>11.603188</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/data/UserInteraction</td>
+      <td>847.872925</td>
+      <td>698.191166</td>
+      <td>1548.305988</td>
+      <td>10</td>
+      <td>900.306821</td>
+      <td>1224.306405</td>
+      <td>1483.506072</td>
+      <td>100.0</td>
+      <td>11.794220</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/odata/BrandMap</td>
+      <td>882.500076</td>
+      <td>728.950977</td>
+      <td>1709.218979</td>
+      <td>10</td>
+      <td>927.379942</td>
+      <td>1318.299460</td>
+      <td>1631.035075</td>
+      <td>100.0</td>
+      <td>11.331444</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/odata/UserHistory?filter=xpressId%20eq%204%20and%20addToCart%20eq%20true%20&amp;$expand=accessories</td>
+      <td>884.382391</td>
+      <td>752.506971</td>
+      <td>1686.350822</td>
+      <td>10</td>
+      <td>977.496409</td>
+      <td>1331.923616</td>
+      <td>1615.465381</td>
+      <td>100.0</td>
+      <td>11.307326</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/odata/UserProfile?$filter=userEmail%20eq%20%27singhrp@daikincomfort.com%27</td>
+      <td>849.432731</td>
+      <td>695.996046</td>
+      <td>1543.917179</td>
+      <td>10</td>
+      <td>905.403161</td>
+      <td>1224.660170</td>
+      <td>1480.065777</td>
+      <td>100.0</td>
+      <td>11.772563</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>https://testapi.goodmanmfg.com/SystemConfigurator/requestEntry</td>
+      <td>1613.797927</td>
+      <td>1260.554075</td>
+      <td>3901.489019</td>
+      <td>10</td>
+      <td>1908.024073</td>
+      <td>2904.756546</td>
+      <td>3702.142525</td>
+      <td>100.0</td>
+      <td>6.196563</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>Total/Average</td>
+      <td>968.071115</td>
+      <td>680.882931</td>
+      <td>6496.017933</td>
+      <td>120</td>
+      <td>1037.061373</td>
+      <td>1578.447918</td>
+      <td>2011.557154</td>
+      <td>100.0</td>
+      <td>130.924426</td>
+    </tr>
+  </tbody>
+</table>
+            
+            <h2>Detailed Analysis</h2>
+            <h3>Top 5 APIs with Highest Error Rates</h3>
+            <table border="1" class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>api</th>
+      <th>total_requests</th>
+      <th>error_rate</th>
+      <th>avg_response_time</th>
+      <th>error_message</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>https://apitest.daikincity.com/api/User/GetCurrentUser</td>
+      <td>10</td>
+      <td>1.0</td>
+      <td>1512.656975</td>
+      <td>{"$id":"1","message":"Authorization has been denied for this request."}</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/data/Matchup</td>
+      <td>10</td>
+      <td>1.0</td>
+      <td>898.304582</td>
+      <td>Token is required</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/data/Outdoor</td>
+      <td>10</td>
+      <td>1.0</td>
+      <td>854.163337</td>
+      <td>Token is required</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/odata/DuctlessFilterMap</td>
+      <td>10</td>
+      <td>1.0</td>
+      <td>776.472449</td>
+      <td>Token is required</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/unitary/data/Matchup</td>
+      <td>10</td>
+      <td>1.0</td>
+      <td>877.575254</td>
+      <td>Token is required</td>
+    </tr>
+  </tbody>
+</table>
+            
+            <h3>Top 5 Slowest APIs</h3>
+            <table border="1" class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>api</th>
+      <th>avg_response_time</th>
+      <th>min_time</th>
+      <th>max_time</th>
+      <th>request_count</th>
+      <th>error_rate</th>
+      <th>error_message</th>
+      <th>throughput</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>11</th>
+      <td>https://testapi.goodmanmfg.com/SystemConfigurator/requestEntry</td>
+      <td>1613.797927</td>
+      <td>1260.554075</td>
+      <td>3901.489019</td>
+      <td>10</td>
+      <td>100.0</td>
+      <td>Error 405: Request method &amp;#39;GET&amp;#39; not supported\n</td>
+      <td>6.196563</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>https://apitest.daikincity.com/api/User/GetCurrentUser</td>
+      <td>1512.656975</td>
+      <td>913.584232</td>
+      <td>6496.017933</td>
+      <td>10</td>
+      <td>100.0</td>
+      <td>{"$id":"1","message":"Authorization has been denied for this request."}</td>
+      <td>6.610884</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/minisplit/data/Matchup</td>
+      <td>898.304582</td>
+      <td>680.882931</td>
+      <td>1921.337128</td>
+      <td>10</td>
+      <td>100.0</td>
+      <td>Token is required</td>
+      <td>11.132082</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/odata/UserHistory?filter=xpressId%20eq%204%20and%20addToCart%20eq%20true%20&amp;$expand=accessories</td>
+      <td>884.382391</td>
+      <td>752.506971</td>
+      <td>1686.350822</td>
+      <td>10</td>
+      <td>100.0</td>
+      <td>Token is required</td>
+      <td>11.307326</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>https://moxe9eq1de.execute-api.us-east-1.amazonaws.com/users/odata/BrandMap</td>
+      <td>882.500076</td>
+      <td>728.950977</td>
+      <td>1709.218979</td>
+      <td>10</td>
+      <td>100.0</td>
+      <td>Token is required</td>
+      <td>11.331444</td>
+    </tr>
+  </tbody>
+</table>
+        </body>
+        </html>
+        
